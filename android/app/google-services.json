@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "110709093540",
+    "project_id": "fairytrail-spring-expo",
+    "storage_bucket": "fairytrail-spring-expo.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:110709093540:android:bd503401efea849ddf6231",
+        "android_client_info": {
+          "package_name": "app.fairytrail.release"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "110709093540-nrr4jg1tqjp566kflqqftka26vedt71s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIrUbUZXh6GLwc_YfkiUGS231DvuH1sxw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "110709093540-nrr4jg1tqjp566kflqqftka26vedt71s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "110709093540-fan6ml4hb3n2r9v7a3rq58hbe910q36k.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "app.fairytrail.release",
+                "app_store_id": "1442011999"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
