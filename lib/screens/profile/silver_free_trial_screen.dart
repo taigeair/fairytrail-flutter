@@ -64,6 +64,7 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
 
   bool _loading = true;
   bool _purchasing = false;
+  bool _trackedView = false;
   Package? _package;
   StoreProduct? _product;
   _TrialInfo? _trial;
@@ -71,13 +72,21 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(_load());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_trackedView) return;
+    _trackedView = true;
     unawaited(
       track('view_free_trial_offer', {
         'tier': tierSilver,
         'from': widget.from,
+        'show_free_trial_x': RemoteConfigScope.of(context).showFreeTrialX,
       }),
     );
-    unawaited(_load());
   }
 
   Future<void> _load() async {
@@ -129,6 +138,7 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
     setState(() => _purchasing = true);
 
     final auth = AuthScope.of(context);
+    final showFreeTrialX = RemoteConfigScope.of(context).showFreeTrialX;
     final userId = auth.user?.id;
     final product = _product ?? _package?.storeProduct;
     final trial = _trial;
@@ -148,6 +158,7 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
       if (trial != null) {
         unawaited(
           track('started_free_trial', {
+            'show_free_trial_x': showFreeTrialX,
             'tier': tierSilver,
             'duration': 12,
             'duration_type': 'yearly',
