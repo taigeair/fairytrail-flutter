@@ -1,6 +1,6 @@
 abstract final class EndPoints {
   /// Flip to `false` for staging API + marketing share links.
-  static const isProd = false;
+  static const isProd = true;
 
   static const _prodBaseUrl = 'https://spring.fairytrail.app';
   static const _prodWebApiBaseUrl = 'https://web-api.fairytrail.app';
