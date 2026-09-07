@@ -63,6 +63,13 @@ class InitResponse {
     return v == 'true';
   }
 
+  /// When true (default), show the close (X) on the Silver free-trial screen.
+  bool get showFreeTrialX {
+    final v = kv['show_free_trial_x'];
+    if (v == null || v.isEmpty) return true;
+    return v == 'true';
+  }
+
   /// Explore daily-limit copy + image (`daily_limit_copy_json`, A/B on server).
   DailyLimitCopyConfig get dailyLimitCopy {
     final raw = kv['daily_limit_copy_json'];

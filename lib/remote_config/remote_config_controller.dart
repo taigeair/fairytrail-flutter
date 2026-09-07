@@ -24,6 +24,7 @@ class RemoteConfigController extends ChangeNotifier {
   bool get showGiftSubscription => _init?.showGiftSubscription ?? false;
   bool get isStripeEnabled => _init?.isStripeEnabled ?? false;
   bool get showFreeTrial => _init?.showFreeTrial ?? true;
+  bool get showFreeTrialX => _init?.showFreeTrialX ?? true;
   FreeTrialTextConfig get freeTrialText =>
       _init?.freeTrialText ?? FreeTrialTextConfig.defaults;
   DailyLimitCopyConfig get dailyLimitCopy =>

@@ -265,82 +265,89 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
         ),
     ];
 
-    return AppScaffold(
-      title: copy.appBarTitle,
-      leading: IconButton(
-        icon: const Icon(Icons.close_rounded),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                    children: [
-                      AppText(
-                        copy.headline,
-                        variant: AppTextVariant.display,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 28),
-                      _TrialTimeline(steps: timelineSteps),
-                      const SizedBox(height: 28),
-                      _BenefitsCard(
-                        header: copy.benefitsHeader,
-                        features: features,
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.backgroundOf(context),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black
-                            .withValues(alpha: isDark ? 0.35 : 0.06),
-                        blurRadius: 16,
-                        offset: const Offset(0, -4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AppText(
-                        t(
-                          trial != null
-                              ? copy.priceWithTrial
-                              : copy.priceWithoutTrial,
+    final showClose = remoteConfig.showFreeTrialX;
+
+    return PopScope(
+      canPop: showClose,
+      child: AppScaffold(
+        title: copy.appBarTitle,
+        leading: showClose
+            ? IconButton(
+                icon: const Icon(Icons.close_rounded),
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : const SizedBox.shrink(),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                      children: [
+                        AppText(
+                          copy.headline,
+                          variant: AppTextVariant.display,
+                          textAlign: TextAlign.center,
                         ),
-                        variant: AppTextVariant.bodySmall,
-                        color: muted,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 10),
-                      AppButton(
-                        label: trial != null
-                            ? copy.ctaWithTrial
-                            : copy.ctaWithoutTrial,
-                        isLoading: _purchasing,
-                        onPressed: _package == null || _purchasing
-                            ? null
-                            : _purchase,
-                      ),
-                      AppButton(
-                        label: copy.restore,
-                        variant: AppButtonVariant.text,
-                        onPressed: _purchasing ? null : _restore,
-                      ),
-                    ],
+                        const SizedBox(height: 28),
+                        _TrialTimeline(steps: timelineSteps),
+                        const SizedBox(height: 28),
+                        _BenefitsCard(
+                          header: copy.benefitsHeader,
+                          features: features,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.backgroundOf(context),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black
+                              .withValues(alpha: isDark ? 0.35 : 0.06),
+                          blurRadius: 16,
+                          offset: const Offset(0, -4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AppText(
+                          t(
+                            trial != null
+                                ? copy.priceWithTrial
+                                : copy.priceWithoutTrial,
+                          ),
+                          variant: AppTextVariant.bodySmall,
+                          color: muted,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        AppButton(
+                          label: trial != null
+                              ? copy.ctaWithTrial
+                              : copy.ctaWithoutTrial,
+                          isLoading: _purchasing,
+                          onPressed: _package == null || _purchasing
+                              ? null
+                              : _purchase,
+                        ),
+                        AppButton(
+                          label: copy.restore,
+                          variant: AppButtonVariant.text,
+                          onPressed: _purchasing ? null : _restore,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }
