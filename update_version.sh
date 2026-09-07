@@ -17,9 +17,12 @@ IS_PROD="$(
     | sed -E 's/.*static const isProd[[:space:]]*=[[:space:]]*([^;[:space:]]+).*/\1/'
 )"
 if [[ "$IS_PROD" != "true" ]]; then
-  echo "error: EndPoints.isProd must be true before running update_version.sh (found: ${IS_PROD:-missing})" >&2
-  echo "  Set isProd = true in $END_POINTS, then re-run." >&2
-  exit 1
+  if [[ "$IS_PROD" != "false" ]]; then
+    echo "error: could not find EndPoints.isProd in $END_POINTS (found: ${IS_PROD:-missing})" >&2
+    exit 1
+  fi
+  echo "==> Setting EndPoints.isProd = true"
+  sed -i '' -E 's/(static const isProd[[:space:]]*=[[:space:]]*)false/\1true/' "$END_POINTS"
 fi
 
 if [[ ! -f pubspec.yaml ]]; then
