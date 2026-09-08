@@ -70,6 +70,15 @@ class InitResponse {
     return v == 'true';
   }
 
+  /// RevenueCat package id for Silver weekly on the upgrade paywall.
+  /// Server resolves `silver_weekly_package_id_A` / `_B` by test group.
+  /// Defaults to `$rc_weekly` (control).
+  String get silverWeeklyPackageId {
+    final v = kv['silver_weekly_package_id']?.trim();
+    if (v == null || v.isEmpty) return r'$rc_weekly';
+    return v;
+  }
+
   /// Explore daily-limit copy + image (`daily_limit_copy_json`, A/B on server).
   DailyLimitCopyConfig get dailyLimitCopy {
     final raw = kv['daily_limit_copy_json'];

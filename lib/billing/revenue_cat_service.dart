@@ -161,7 +161,7 @@ class RevenueCatService {
 
   PackagePriceInfo fallbackPriceForPlan(BillingPlan plan) {
     const currencySymbol = '\$';
-    final isWeekly = plan.rcPackageId == r'$rc_weekly';
+    final isWeekly = plan.isWeekly;
     final unitPrice = isWeekly ? plan.fullPrice / 7 : plan.price;
     final suffix = isWeekly ? '/day' : '/mo';
 
@@ -182,7 +182,10 @@ class RevenueCatService {
   ) {
     if (pkg == null) return PackagePriceInfo.empty;
 
-    final duration = packageId == r'$rc_weekly' ? 7 : durationPeriod;
+    final isWeekly = durationPeriod == 7 ||
+        packageId == r'$rc_weekly' ||
+        (packageId != null && packageId.contains('weekly'));
+    final duration = isWeekly ? 7 : durationPeriod;
     final price = pkg.storeProduct.price;
     final monthlyPrice = price / duration;
     final currencySymbol =
@@ -201,7 +204,7 @@ class RevenueCatService {
     }
 
     final formattedMonthly = formatMonthly(monthlyPrice);
-    final suffix = packageId == r'$rc_weekly' ? '/day' : '/mo';
+    final suffix = isWeekly ? '/day' : '/mo';
 
     return PackagePriceInfo(
       package: pkg,

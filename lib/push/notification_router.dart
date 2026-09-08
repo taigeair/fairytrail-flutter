@@ -746,7 +746,11 @@ class NotificationRouter {
   }
 
   static Future<void> openPostcard(int postcardId) async {
-    await PostcardInbox.presentFromWs({'postcardId': postcardId});
+    // Push + mail deep links should reopen even after unread auto-present.
+    await PostcardInbox.presentFromWs(
+      {'postcardId': postcardId},
+      fromDeepLink: true,
+    );
   }
 
   static Future<void> openGiftSubscription(String idOrToken) async {

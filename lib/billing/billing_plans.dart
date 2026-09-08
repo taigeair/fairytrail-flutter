@@ -32,6 +32,29 @@ class BillingPlan {
   final String? label;
   final String productId;
   final String rcPackageId;
+
+  /// Silver weekly row (7-day period), regardless of A/B package id.
+  bool get isWeekly => duration == 7;
+
+  BillingPlan copyWith({
+    int? duration,
+    int? durationLabel,
+    double? price,
+    double? fullPrice,
+    String? label,
+    String? productId,
+    String? rcPackageId,
+  }) {
+    return BillingPlan(
+      duration: duration ?? this.duration,
+      durationLabel: durationLabel ?? this.durationLabel,
+      price: price ?? this.price,
+      fullPrice: fullPrice ?? this.fullPrice,
+      label: label ?? this.label,
+      productId: productId ?? this.productId,
+      rcPackageId: rcPackageId ?? this.rcPackageId,
+    );
+  }
 }
 
 /// Calculates savings against the tier's shortest (base) plan after normalizing
@@ -53,8 +76,46 @@ int? calculateSavingsPercent({
 }
 
 double _billingPeriodDays(BillingPlan plan) {
-  if (plan.rcPackageId == r'$rc_weekly') return 7;
+  if (plan.isWeekly) return 7;
   return plan.duration * (365.25 / 12);
+}
+
+/// Silver catalog with the A/B weekly RevenueCat package id applied.
+List<BillingPlan> silverPlansForWeeklyPackage(String weeklyPackageId) {
+  final id = weeklyPackageId.trim().isEmpty
+      ? r'$rc_weekly'
+      : weeklyPackageId.trim();
+  final weeklyProductId = _weeklyProductIdForPackage(id);
+  return [
+    for (final plan in billingTiers[tierSilver]!)
+      if (plan.isWeekly)
+        plan.copyWith(rcPackageId: id, productId: weeklyProductId)
+      else
+        plan,
+  ];
+}
+
+/// Store product ids for Silver weekly A/B packages (offline / catalog fallback).
+///
+/// Matches RevenueCat offering `silver`:
+/// - `$rc_weekly` → A (control)
+/// - `weekly_b` → B (variant)
+String _weeklyProductIdForPackage(String packageId) {
+  if (packageId == 'weekly_b') {
+    return _isAndroid ? 'silver:silver-1week' : 'silver_week_b';
+  }
+  return _isAndroid ? 'silver:silver-1-599' : 'silver.1.599';
+}
+
+/// Plans for [tier], applying weekly A/B package id when [tier] is Silver.
+List<BillingPlan> plansForTier(
+  String tier, {
+  String weeklyPackageId = r'$rc_weekly',
+}) {
+  if (tier == tierSilver) {
+    return silverPlansForWeeklyPackage(weeklyPackageId);
+  }
+  return List<BillingPlan>.from(billingTiers[tier] ?? const []);
 }
 
 final bool _isAndroid = Platform.isAndroid;
@@ -67,7 +128,9 @@ final Map<String, Map<String, String>> _productIds = {
   },
   tierSilver: {
     '1': _isAndroid ? 'silver:silver-1' : 'silver',
-    '1_weekly': _isAndroid ? 'silver:silver-1week' : 'silver.1.599',
+    // Control weekly (A / $rc_weekly). Variant B uses weekly_b → see
+    // [_weeklyProductIdForPackage].
+    '1_weekly': _isAndroid ? 'silver:silver-1-599' : 'silver.1.599',
     '6': _isAndroid ? 'silver:silver-6' : 'silver.6',
     '12': _isAndroid ? 'silver:silver-12' : 'silver.12',
   },
