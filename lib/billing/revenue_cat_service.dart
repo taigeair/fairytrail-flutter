@@ -99,6 +99,34 @@ class RevenueCatService {
 
   Future<CustomerInfo> restorePurchases() => Purchases.restorePurchases();
 
+  /// Whether this store account has already used the Silver annual trial.
+  ///
+  /// Apple exposes trial eligibility directly. Google Play reports eligibility
+  /// as unknown, so purchase history is used there as the conservative fallback.
+  Future<bool> hasUsedSilverAnnualTrial() async {
+    if (!_configured) return false;
+
+    final annualPlan = billingTiers[tierSilver]!.firstWhere(
+      (plan) => plan.rcPackageId == r'$rc_annual',
+    );
+    final productId = annualPlan.productId;
+
+    if (Platform.isIOS) {
+      final eligibility =
+          await Purchases.checkTrialOrIntroductoryPriceEligibility([productId]);
+      final status = eligibility[productId]?.status;
+      if (status == IntroEligibilityStatus.introEligibilityStatusIneligible) {
+        return true;
+      }
+      if (status == IntroEligibilityStatus.introEligibilityStatusEligible) {
+        return false;
+      }
+    }
+
+    final customerInfo = await getCustomerInfo();
+    return customerInfo.allPurchasedProductIdentifiers.contains(productId);
+  }
+
   Package? findPackage({
     required String tier,
     required String rcPackageId,

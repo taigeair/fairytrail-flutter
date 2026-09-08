@@ -90,6 +90,12 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
   }
 
   Future<void> _load() async {
+    // Debug launch can open this screen before sign-in configures billing.
+    if (!RevenueCatService.instance.isConfigured) {
+      setState(() => _loading = false);
+      return;
+    }
+
     setState(() {
       _loading = true;
     });
@@ -222,6 +228,7 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
   }
 
   Future<void> _restore() async {
+    if (!RevenueCatService.instance.isConfigured) return;
     try {
       await RevenueCatService.instance.restorePurchases();
       if (!mounted) return;

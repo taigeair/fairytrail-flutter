@@ -149,7 +149,7 @@ class _SignupRateStepState extends State<SignupRateStep> {
       step: 10,
       title: 'It starts with being kind',
       continueLabel: 'Continue',
-      subtitle: 'Let\'s make Fairytrail a great place for travelers',
+      subtitle: 'Let\'s make Fairytrail a great place',
       canContinue: _canContinue,
       isLoading: _busy,
       onContinue: () => unawaited(_onContinue()),
@@ -183,7 +183,7 @@ class _SignupRateStepState extends State<SignupRateStep> {
                   ),
                   const SizedBox(height: 8),
                   AppText(
-                    '4.8 average from travelers worldwide',
+                    'Built for nomads & solo travelers',
                     variant: AppTextVariant.bodySmall,
                     textAlign: TextAlign.center,
                     color: muted,

@@ -96,7 +96,7 @@ class _CustomStarRatingDialogState extends State<CustomStarRatingDialog> {
             ),
             const SizedBox(height: 16),
             Text(
-              'How would you rate Fairytrail?',
+              'Enjoying Fairytrail so far?',
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,

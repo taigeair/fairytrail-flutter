@@ -93,13 +93,15 @@ class PushService {
   static final PushService instance = PushService._();
 
   static const _signupReminders = <(int, Duration)>[
-    (5001, Duration(days: 1)),
-    (5002, Duration(days: 3)),
-    (5003, Duration(days: 7)),
+    (5001, Duration(minutes: 10)),
+    (5002, Duration(hours: 1)),
+    (5003, Duration(hours: 24)),
+    (5004, Duration(hours: 48)),
+    (5005, Duration(hours: 72)),
   ];
-  static const _signupReminderTitle = 'Meet your next travel partner ✈️';
+  static const _signupReminderTitle = 'Finish setting up';
   static const _signupReminderBody =
-      'Thousands of travelers are active right now. Finish signing up to see who matches your vibe.';
+      'Find friends who love adventure! Sign up takes 1 minute.';
 
   /// Fixed IDs so reschedules replace rather than stack.
   static const _exploreAvailableNotificationId = 5101;
@@ -521,7 +523,9 @@ class PushService {
           details: _quietSignupNotificationDetails,
         );
       }
-      debugPrint('[Push] signup reminders scheduled for 1, 3, and 7 days');
+      debugPrint(
+        '[Push] signup reminders scheduled for 10m, 1h, 24h, 48h, and 72h',
+      );
     } catch (e) {
       debugPrint('[Push] failed to schedule signup reminder: $e');
     }

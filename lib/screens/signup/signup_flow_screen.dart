@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fairytrail/analytics/analytics_service.dart';
 import 'package:fairytrail/api/update_user_data.dart';
 import 'package:fairytrail/auth/auth_controller.dart';
+import 'package:fairytrail/billing/revenue_cat_service.dart';
 import 'package:fairytrail/explore/explore_warm_prefetch.dart';
 import 'package:fairytrail/registration/background_photo_upload.dart';
 import 'package:fairytrail/config/signup_options.dart';
@@ -397,7 +398,15 @@ class _SignupFlowScreenState extends State<SignupFlowScreen> {
   Future<void> _openUpgradeThenFinish() async {
     if (_upgradeOpened || !mounted) return;
     _upgradeOpened = true;
-    if (RemoteConfigScope.of(context).showFreeTrial) {
+    var hasUsedFreeTrial = false;
+    try {
+      hasUsedFreeTrial =
+          await RevenueCatService.instance.hasUsedSilverAnnualTrial();
+    } catch (e) {
+      debugPrint('[Signup] Free-trial eligibility check failed: $e');
+    }
+    if (!mounted) return;
+    if (RemoteConfigScope.of(context).showFreeTrial && !hasUsedFreeTrial) {
       await SilverFreeTrialScreen.open(context, from: 'signup');
     }
     if (!mounted) return;

@@ -1,7 +1,7 @@
 /// Keep in sync with pubspec.yaml (via ./update_version.sh).
 abstract final class AppVersionInfo {
-  static const version = '26.1.6';
-  static const build = '260106';
+  static const version = '26.1.7';
+  static const build = '260107';
 
   /// RN `isAcceptableBuild` — compares numeric build against remote config
   /// `acceptableBuild`. Missing/invalid config = allow.
