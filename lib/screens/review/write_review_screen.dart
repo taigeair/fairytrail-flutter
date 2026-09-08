@@ -111,13 +111,13 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
                 ),
               ),
               AppButton(
-                label: 'Rate',
+                label: 'Rate or review',
                 onPressed: _busy ? null : _onReview,
                 isLoading: _busy,
               ),
               const SizedBox(height: 12),
               AppButton(
-                label: 'Decline request',
+                label: 'Decline',
                 variant: AppButtonVariant.secondary,
                 onPressed: _busy ? null : _onLater,
               ),
