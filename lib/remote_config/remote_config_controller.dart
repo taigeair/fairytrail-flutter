@@ -2,6 +2,7 @@ import 'package:fairytrail/api/init.dart';
 import 'package:fairytrail/config/billing_config.dart';
 import 'package:fairytrail/config/daily_limit_copy_config.dart';
 import 'package:fairytrail/config/free_trial_text_config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Global remote config from `GET /api/v1/init` — same pattern as [ThemeController].
@@ -81,9 +82,21 @@ class RemoteConfigController extends ChangeNotifier {
   int get showAdminPopupVersion => _init?.showAdminPopupVersion ?? 0;
   String? get showAdminPopupUrl => _init?.showAdminPopupUrl;
 
-  Future<void> refresh({bool requiresAuth = true}) {
-    final inFlight = _refreshFuture;
-    if (inFlight != null) return inFlight;
+  int _refreshGeneration = 0;
+
+  /// Drop cached init so the next [refresh] cannot reuse another user's A/B.
+  void clear() {
+    _refreshGeneration++;
+    _init = null;
+    _refreshing = false;
+    _refreshFuture = null;
+  }
+
+  Future<void> refresh({bool requiresAuth = true, bool force = false}) {
+    if (!force) {
+      final inFlight = _refreshFuture;
+      if (inFlight != null) return inFlight;
+    }
 
     final future = _performRefresh(requiresAuth: requiresAuth);
     _refreshFuture = future;
@@ -91,13 +104,24 @@ class RemoteConfigController extends ChangeNotifier {
   }
 
   Future<void> _performRefresh({required bool requiresAuth}) async {
+    final generation = ++_refreshGeneration;
     _refreshing = true;
     try {
-      _init = await fetchInit(requiresAuth: requiresAuth);
+      final result = await fetchInit(requiresAuth: requiresAuth);
+      if (generation != _refreshGeneration) return;
+      _init = result;
+      if (kDebugMode) {
+        debugPrint(
+          '[RemoteConfig] refreshed weekly=${result.silverWeeklyPackageId} '
+          'force-gen=$generation',
+        );
+      }
       notifyListeners();
     } finally {
-      _refreshing = false;
-      _refreshFuture = null;
+      if (generation == _refreshGeneration) {
+        _refreshing = false;
+        _refreshFuture = null;
+      }
     }
   }
 }

@@ -80,11 +80,37 @@ double _billingPeriodDays(BillingPlan plan) {
   return plan.duration * (365.25 / 12);
 }
 
+/// Maps init / remote-config weekly values onto RevenueCat package ids.
+String normalizeSilverWeeklyPackageId(String raw) {
+  final v = raw.trim();
+  if (v.isEmpty) return r'$rc_weekly';
+  switch (v.toLowerCase()) {
+    case 'b':
+    case 'weekly_b':
+    case 'silver_week_b':
+    case 'silver:silver-1week':
+    case 'silver-1week':
+      return 'weekly_b';
+    case 'a':
+    case r'$rc_weekly':
+    case 'silver.1.599':
+    case 'silver:silver-1-599':
+    case 'silver-1-599':
+      return r'$rc_weekly';
+    default:
+      final lower = v.toLowerCase();
+      if (lower.contains('week_b') ||
+          lower.contains('weekly_b') ||
+          lower.contains('1week')) {
+        return 'weekly_b';
+      }
+      return v;
+  }
+}
+
 /// Silver catalog with the A/B weekly RevenueCat package id applied.
 List<BillingPlan> silverPlansForWeeklyPackage(String weeklyPackageId) {
-  final id = weeklyPackageId.trim().isEmpty
-      ? r'$rc_weekly'
-      : weeklyPackageId.trim();
+  final id = normalizeSilverWeeklyPackageId(weeklyPackageId);
   final weeklyProductId = _weeklyProductIdForPackage(id);
   return [
     for (final plan in billingTiers[tierSilver]!)
@@ -101,7 +127,12 @@ List<BillingPlan> silverPlansForWeeklyPackage(String weeklyPackageId) {
 /// - `$rc_weekly` → A (control)
 /// - `weekly_b` → B (variant)
 String _weeklyProductIdForPackage(String packageId) {
-  if (packageId == 'weekly_b') {
+  final id = packageId.trim().toLowerCase();
+  final isVariantB = id == 'weekly_b' ||
+      id == 'b' ||
+      id.contains('week_b') ||
+      id.contains('1week');
+  if (isVariantB) {
     return _isAndroid ? 'silver:silver-1week' : 'silver_week_b';
   }
   return _isAndroid ? 'silver:silver-1-599' : 'silver.1.599';

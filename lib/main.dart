@@ -115,6 +115,7 @@ class _FairytrailAppState extends State<FairytrailApp>
     with WidgetsBindingObserver {
   AuthDestination? _destination;
   bool _wasAuthenticated = false;
+  String? _remoteConfigUserId;
 
   @override
   void initState() {
@@ -122,6 +123,7 @@ class _FairytrailAppState extends State<FairytrailApp>
     WidgetsBinding.instance.addObserver(this);
     _destination = _resolveDestination();
     _wasAuthenticated = widget.authController.isAuthenticated;
+    _remoteConfigUserId = widget.authController.user?.id;
     widget.authController.addListener(_onAuthChanged);
     widget.themeController.addListener(_onThemeChanged);
     // Handle password-reset deep links while logged out (MainShell may
@@ -188,11 +190,19 @@ class _FairytrailAppState extends State<FairytrailApp>
 
   void _onAuthChanged() {
     final authenticated = widget.authController.isAuthenticated;
+    final userId = widget.authController.user?.id;
     if (authenticated && !_wasAuthenticated) {
       // Always start each session in light (white) theme.
       widget.themeController.setMode(ThemeMode.light);
-      unawaited(widget.remoteConfigController.refresh());
     }
+    // Login *and* impersonate — A/B keys like weekly are per-user.
+    if (authenticated && userId != null && userId != _remoteConfigUserId) {
+      widget.remoteConfigController.clear();
+      unawaited(widget.remoteConfigController.refresh(force: true));
+    } else if (!authenticated) {
+      widget.remoteConfigController.clear();
+    }
+    _remoteConfigUserId = authenticated ? userId : null;
     _wasAuthenticated = authenticated;
 
     final next = _resolveDestination();

@@ -121,6 +121,11 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     await Future<void>.delayed(Duration.zero);
     if (!mounted) return;
 
+    try {
+      await RemoteConfigScope.maybeOf(context)?.refresh();
+    } catch (_) {}
+    if (!mounted) return;
+
     final auth = AuthScope.of(context);
     final userId = auth.user?.id;
     if (userId != null && userId.isNotEmpty) {
@@ -133,6 +138,18 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       final offerings = await RevenueCatService.instance.refreshOfferings();
       final info = await RevenueCatService.instance.getCustomerInfo();
       if (!mounted) return;
+      final weeklyId = _weeklyPackageId;
+      final silverPkgs = offerings?.all[tierSilver]?.availablePackages
+              .map(
+                (p) =>
+                    '${p.identifier}→${p.storeProduct.identifier} ${p.storeProduct.priceString}',
+              )
+              .toList() ??
+          const <String>[];
+      final plans = plansForTier(tierSilver, weeklyPackageId: weeklyId);
+      debugPrint('[Upgrade] weeklyPackageId=$weeklyId from=${widget.from}');
+      debugPrint('[Upgrade] silver plans=${plans.map((p) => '${p.rcPackageId}/${p.productId}').toList()}');
+      debugPrint('[Upgrade] RC silver packages=$silverPkgs');
       setState(() {
         _offerings = offerings;
         _activeSubscriptions = info.activeSubscriptions.toList();
@@ -764,7 +781,12 @@ class _TierTabsState extends State<_TierTabs>
 
     final index = _selectedIndex(tabs);
     if (_controller.index != index) {
-      _controller.animateTo(index);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_controller.index != index) {
+          _controller.animateTo(index);
+        }
+      });
     }
   }
 

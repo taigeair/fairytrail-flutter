@@ -78,5 +78,8 @@ void main() {
     final weeklyVariant = variant.firstWhere((p) => p.isWeekly);
     expect(weeklyVariant.rcPackageId, 'weekly_b');
     expect(weeklyVariant.productId, isNot(equals(weeklyControl.productId)));
+
+    final fromLetter = silverPlansForWeeklyPackage('B');
+    expect(fromLetter.firstWhere((p) => p.isWeekly).rcPackageId, 'weekly_b');
   });
 }

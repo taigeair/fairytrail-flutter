@@ -1,9 +1,11 @@
 import 'dart:convert';
 
+import 'package:fairytrail/billing/billing_plans.dart';
 import 'package:fairytrail/config/daily_limit_copy_config.dart';
 import 'package:fairytrail/config/free_trial_text_config.dart';
 import 'package:fairytrail/utils/api/end_points.dart';
 import 'package:fairytrail/utils/api/https.dart';
+import 'package:flutter/foundation.dart';
 
 class InitResponse {
   const InitResponse({required this.kv});
@@ -71,11 +73,25 @@ class InitResponse {
   }
 
   /// RevenueCat package id for Silver weekly on the upgrade paywall.
-  /// Server resolves `silver_weekly_package_id_A` / `_B` by test group.
+  ///
+  /// Reads the resolved `silver_weekly_package_id`, or the assigned
+  /// `silver_weekly_package_id_A` / `_B` key when the server only sends the
+  /// winning variant. Accepts `$rc_weekly` / `weekly_b` or `A` / `B`.
   /// Defaults to `$rc_weekly` (control).
   String get silverWeeklyPackageId {
-    final v = kv['silver_weekly_package_id']?.trim();
-    if (v == null || v.isEmpty) return r'$rc_weekly';
+    final resolved = _nonEmpty(kv['silver_weekly_package_id']);
+    if (resolved != null) return normalizeSilverWeeklyPackageId(resolved);
+
+    final a = _nonEmpty(kv['silver_weekly_package_id_A']);
+    final b = _nonEmpty(kv['silver_weekly_package_id_B']);
+    if (b != null && a == null) return normalizeSilverWeeklyPackageId(b);
+    if (a != null && b == null) return normalizeSilverWeeklyPackageId(a);
+    return r'$rc_weekly';
+  }
+
+  static String? _nonEmpty(String? value) {
+    final v = value?.trim();
+    if (v == null || v.isEmpty) return null;
     return v;
   }
 
@@ -289,5 +305,24 @@ Future<InitResponse> fetchInit({bool requiresAuth = true}) async {
     );
   }
 
-  return InitResponse.fromJson(Map<String, dynamic>.from(data));
+  final init = InitResponse.fromJson(Map<String, dynamic>.from(data));
+  _logWeeklyAb(init);
+  return init;
+}
+
+void _logWeeklyAb(InitResponse init) {
+  if (!kDebugMode) return;
+  final weeklyKv = Map<String, String>.fromEntries(
+    init.kv.entries.where((e) {
+      final k = e.key.toLowerCase();
+      return k.contains('week') ||
+          k.contains('silver_weekly') ||
+          k.contains('package_id') ||
+          k.endsWith('_a') ||
+          k.endsWith('_b');
+    }),
+  );
+  debugPrint('[Init] silverWeeklyPackageId=${init.silverWeeklyPackageId}');
+  debugPrint('[Init] weekly/AB kv ($weeklyKv)');
+  debugPrint('[Init] all kv keys=${(init.kv.keys.toList()..sort())}');
 }

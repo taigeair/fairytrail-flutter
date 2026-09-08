@@ -130,16 +130,25 @@ class RevenueCatService {
   Package? findPackage({
     required String tier,
     required String rcPackageId,
+    String? productId,
     Offerings? offerings,
   }) {
     final all = offerings?.all ?? _cachedOfferings?.all;
     if (all == null) return null;
     final offering = all[tier];
     if (offering == null) return null;
+    Package? byProduct;
     for (final pkg in offering.availablePackages) {
       if (pkg.identifier == rcPackageId) return pkg;
+      final storeId = pkg.storeProduct.identifier;
+      if (storeId == rcPackageId ||
+          (productId != null &&
+              productId.isNotEmpty &&
+              storeId == productId)) {
+        byProduct ??= pkg;
+      }
     }
-    return null;
+    return byProduct;
   }
 
   PackagePriceInfo priceForPlan({
@@ -150,6 +159,7 @@ class RevenueCatService {
     final pkg = findPackage(
       tier: tier,
       rcPackageId: plan.rcPackageId,
+      productId: plan.productId,
       offerings: offerings,
     );
     if (pkg != null) {
@@ -226,6 +236,7 @@ class RevenueCatService {
     final pkg = findPackage(
       tier: tier,
       rcPackageId: plan.rcPackageId,
+      productId: plan.productId,
       offerings: offerings,
     );
     if (pkg == null) {

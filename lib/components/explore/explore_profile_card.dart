@@ -78,7 +78,10 @@ class _ExploreProfileCardState extends State<ExploreProfileCard> {
     try {
       final activities = await getProfileActivities(profileId);
       if (!mounted || generation != _loadGeneration) return;
-      setState(() => _bucketListActivities = activities);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || generation != _loadGeneration) return;
+        setState(() => _bucketListActivities = activities);
+      });
     } catch (_) {
       // Bucket list is optional profile content; keep the profile usable when
       // the endpoint is unavailable or the feature is disabled.
