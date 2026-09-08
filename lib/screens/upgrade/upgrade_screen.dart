@@ -7,6 +7,7 @@ import 'package:fairytrail/api/billing.dart';
 import 'package:fairytrail/api/models/auth_models.dart';
 import 'package:fairytrail/auth/auth_controller.dart';
 import 'package:fairytrail/billing/billing_plans.dart';
+import 'package:fairytrail/remote_config/remote_config_controller.dart';
 import 'package:fairytrail/billing/revenue_cat_service.dart';
 import 'package:fairytrail/haptics/haptics_service.dart';
 import 'package:fairytrail/screens/upgrade/upgrade_processing_screen.dart';
@@ -120,6 +121,11 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     await Future<void>.delayed(Duration.zero);
     if (!mounted) return;
 
+    try {
+      await RemoteConfigScope.maybeOf(context)?.refresh();
+    } catch (_) {}
+    if (!mounted) return;
+
     final auth = AuthScope.of(context);
     final userId = auth.user?.id;
     if (userId != null && userId.isNotEmpty) {
@@ -132,6 +138,18 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       final offerings = await RevenueCatService.instance.refreshOfferings();
       final info = await RevenueCatService.instance.getCustomerInfo();
       if (!mounted) return;
+      final weeklyId = _weeklyPackageId;
+      final silverPkgs = offerings?.all[tierSilver]?.availablePackages
+              .map(
+                (p) =>
+                    '${p.identifier}→${p.storeProduct.identifier} ${p.storeProduct.priceString}',
+              )
+              .toList() ??
+          const <String>[];
+      final plans = plansForTier(tierSilver, weeklyPackageId: weeklyId);
+      debugPrint('[Upgrade] weeklyPackageId=$weeklyId from=${widget.from}');
+      debugPrint('[Upgrade] silver plans=${plans.map((p) => '${p.rcPackageId}/${p.productId}').toList()}');
+      debugPrint('[Upgrade] RC silver packages=$silverPkgs');
       setState(() {
         _offerings = offerings;
         _activeSubscriptions = info.activeSubscriptions.toList();
@@ -159,16 +177,24 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     });
   }
 
+  String get _weeklyPackageId =>
+      RemoteConfigScope.maybeOf(context)?.silverWeeklyPackageId ?? r'$rc_weekly';
+
+  List<BillingPlan> get _plansForTier => plansForTier(
+        _effectiveTierToShow,
+        weeklyPackageId: _weeklyPackageId,
+      );
+
   BillingPlan? get _selectedBillingPlan {
-    final plans = billingTiers[_effectiveTierToShow];
-    if (plans == null) return null;
+    final plans = _plansForTier;
+    if (plans.isEmpty) return null;
     for (final plan in plans) {
       if (plan.duration == _selectedDuration &&
           plan.rcPackageId == _selectedPlan) {
         return plan;
       }
     }
-    return plans.isNotEmpty ? plans.first : null;
+    return plans.first;
   }
 
   PackagePriceInfo get _selectedPrice {
@@ -184,7 +210,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   String get _periodLabel {
     final plan = _selectedBillingPlan;
     if (plan == null) return '';
-    if (plan.rcPackageId == r'$rc_weekly') return 'week';
+    if (plan.isWeekly) return 'week';
     if (plan.rcPackageId == r'$rc_annual') return 'year';
     if (plan.duration == 1) return 'month';
     return '${plan.duration} months';
@@ -198,13 +224,14 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     unawaited(
       track('click_subscribe_button', {
         'tier': _effectiveTierToShow,
-        'duration': plan.rcPackageId == r'$rc_weekly' ? 1 : plan.duration,
+        'duration': plan.isWeekly ? 1 : plan.duration,
         'price': plan.fullPrice,
-        'duration_type': plan.rcPackageId == r'$rc_weekly'
+        'duration_type': plan.isWeekly
             ? 'weekly'
             : plan.rcPackageId == r'$rc_annual'
             ? 'yearly'
             : 'monthly',
+        'rc_package_id': plan.rcPackageId,
         'source': widget.from,
         'reason': widget.reason,
       }),
@@ -212,7 +239,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     unawaited(
       AnalyticsService.instance.logEvent('started_subscription', {
         'tier': _effectiveTierToShow,
-        'duration': plan.rcPackageId == r'$rc_weekly' ? 1 : plan.duration,
+        'duration': plan.isWeekly ? 1 : plan.duration,
         'price': plan.fullPrice,
         'revenue': plan.fullPrice,
         'currency': 'USD',
@@ -250,8 +277,8 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       final price = _selectedPrice;
       final storeProduct = price.package?.storeProduct;
       final isUpgrade = current == tierSilver;
-      final duration = plan.rcPackageId == r'$rc_weekly' ? 1 : plan.duration;
-      final durationType = plan.rcPackageId == r'$rc_weekly'
+      final duration = plan.isWeekly ? 1 : plan.duration;
+      final durationType = plan.isWeekly
           ? 'weekly'
           : plan.rcPackageId == r'$rc_annual'
           ? 'yearly'
@@ -269,6 +296,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
             'to_tier': _effectiveTierToShow,
             'duration': duration,
             'duration_type': durationType,
+            'rc_package_id': plan.rcPackageId,
             'price': purchasePrice,
           },
         ),
@@ -607,7 +635,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
                         const SizedBox(height: 22),
                         _PlanOptions(
                           tier: _effectiveTierToShow,
-                          plans: billingTiers[_effectiveTierToShow] ?? const [],
+                          plans: _plansForTier,
                           selectedDuration: _selectedDuration,
                           selectedPlan: _selectedPlan,
                           offerings: _offerings,
@@ -753,7 +781,12 @@ class _TierTabsState extends State<_TierTabs>
 
     final index = _selectedIndex(tabs);
     if (_controller.index != index) {
-      _controller.animateTo(index);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_controller.index != index) {
+          _controller.animateTo(index);
+        }
+      });
     }
   }
 
@@ -903,7 +936,7 @@ class _PlanCard extends StatelessWidget {
   final VoidCallback onTap;
 
   String get _periodUnit {
-    if (plan.rcPackageId == r'$rc_weekly') return 'week';
+    if (plan.isWeekly) return 'week';
     if (plan.rcPackageId == r'$rc_annual') return 'year';
     if (plan.duration == 1) return 'month';
     return 'months';
@@ -1015,7 +1048,7 @@ class _PlanCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              plan.duration > 1 || plan.rcPackageId == r'$rc_weekly'
+              plan.duration > 1 || plan.isWeekly
                   ? price.totalPrice
                   : 'billed monthly',
               textAlign: TextAlign.center,

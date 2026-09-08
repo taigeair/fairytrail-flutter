@@ -130,16 +130,25 @@ class RevenueCatService {
   Package? findPackage({
     required String tier,
     required String rcPackageId,
+    String? productId,
     Offerings? offerings,
   }) {
     final all = offerings?.all ?? _cachedOfferings?.all;
     if (all == null) return null;
     final offering = all[tier];
     if (offering == null) return null;
+    Package? byProduct;
     for (final pkg in offering.availablePackages) {
       if (pkg.identifier == rcPackageId) return pkg;
+      final storeId = pkg.storeProduct.identifier;
+      if (storeId == rcPackageId ||
+          (productId != null &&
+              productId.isNotEmpty &&
+              storeId == productId)) {
+        byProduct ??= pkg;
+      }
     }
-    return null;
+    return byProduct;
   }
 
   PackagePriceInfo priceForPlan({
@@ -150,6 +159,7 @@ class RevenueCatService {
     final pkg = findPackage(
       tier: tier,
       rcPackageId: plan.rcPackageId,
+      productId: plan.productId,
       offerings: offerings,
     );
     if (pkg != null) {
@@ -161,7 +171,7 @@ class RevenueCatService {
 
   PackagePriceInfo fallbackPriceForPlan(BillingPlan plan) {
     const currencySymbol = '\$';
-    final isWeekly = plan.rcPackageId == r'$rc_weekly';
+    final isWeekly = plan.isWeekly;
     final unitPrice = isWeekly ? plan.fullPrice / 7 : plan.price;
     final suffix = isWeekly ? '/day' : '/mo';
 
@@ -182,7 +192,10 @@ class RevenueCatService {
   ) {
     if (pkg == null) return PackagePriceInfo.empty;
 
-    final duration = packageId == r'$rc_weekly' ? 7 : durationPeriod;
+    final isWeekly = durationPeriod == 7 ||
+        packageId == r'$rc_weekly' ||
+        (packageId != null && packageId.contains('weekly'));
+    final duration = isWeekly ? 7 : durationPeriod;
     final price = pkg.storeProduct.price;
     final monthlyPrice = price / duration;
     final currencySymbol =
@@ -201,7 +214,7 @@ class RevenueCatService {
     }
 
     final formattedMonthly = formatMonthly(monthlyPrice);
-    final suffix = packageId == r'$rc_weekly' ? '/day' : '/mo';
+    final suffix = isWeekly ? '/day' : '/mo';
 
     return PackagePriceInfo(
       package: pkg,
@@ -223,6 +236,7 @@ class RevenueCatService {
     final pkg = findPackage(
       tier: tier,
       rcPackageId: plan.rcPackageId,
+      productId: plan.productId,
       offerings: offerings,
     );
     if (pkg == null) {

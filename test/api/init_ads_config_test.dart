@@ -36,6 +36,37 @@ void main() {
     expect(response.verificationButtonText, isNull);
   });
 
+  test('resolves silver weekly A/B package ids', () {
+    expect(
+      InitResponse.fromJson({
+        'kv': {'silver_weekly_package_id': 'weekly_b'},
+      }).silverWeeklyPackageId,
+      'weekly_b',
+    );
+    expect(
+      InitResponse.fromJson({
+        'kv': {'silver_weekly_package_id': 'B'},
+      }).silverWeeklyPackageId,
+      'weekly_b',
+    );
+    expect(
+      InitResponse.fromJson({
+        'kv': {'silver_weekly_package_id_B': 'weekly_b'},
+      }).silverWeeklyPackageId,
+      'weekly_b',
+    );
+    expect(
+      InitResponse.fromJson({
+        'kv': {'silver_weekly_package_id_A': r'$rc_weekly'},
+      }).silverWeeklyPackageId,
+      r'$rc_weekly',
+    );
+    expect(
+      InitResponse.fromJson({'kv': <String, String>{}}).silverWeeklyPackageId,
+      r'$rc_weekly',
+    );
+  });
+
   test('allows first-connect ad grace to be disabled remotely', () {
     final response = InitResponse.fromJson({
       'kv': {'first_connect_ad_grace_actions': '0'},

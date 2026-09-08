@@ -68,4 +68,18 @@ void main() {
       isNull,
     );
   });
+
+  test('silverPlansForWeeklyPackage applies A/B package and product ids', () {
+    final control = silverPlansForWeeklyPackage(r'$rc_weekly');
+    final weeklyControl = control.firstWhere((p) => p.isWeekly);
+    expect(weeklyControl.rcPackageId, r'$rc_weekly');
+
+    final variant = silverPlansForWeeklyPackage('weekly_b');
+    final weeklyVariant = variant.firstWhere((p) => p.isWeekly);
+    expect(weeklyVariant.rcPackageId, 'weekly_b');
+    expect(weeklyVariant.productId, isNot(equals(weeklyControl.productId)));
+
+    final fromLetter = silverPlansForWeeklyPackage('B');
+    expect(fromLetter.firstWhere((p) => p.isWeekly).rcPackageId, 'weekly_b');
+  });
 }

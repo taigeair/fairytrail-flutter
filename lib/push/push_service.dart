@@ -798,6 +798,32 @@ class PushService {
       return;
     }
 
+    final postcardMatch = RegExp(
+      r'/dl/postcard(?:/([^/?#]+))?/?$',
+      caseSensitive: false,
+    ).firstMatch(path);
+    if (postcardMatch != null ||
+        RegExp(r'^/dl/postcard', caseSensitive: false).hasMatch(normalized)) {
+      data['type'] = 'postcard';
+      final postcardId = postcardMatch?.group(1);
+      if (postcardId != null && postcardId.isNotEmpty) {
+        data['postcardId'] = Uri.decodeComponent(postcardId);
+      }
+      debugPrint(
+        '[Push] deep link → postcard postcardId=${data['postcardId']}',
+      );
+      _dispatchOpen(data);
+      return;
+    }
+
+    // Welcome / “open app” mail CTA — app is already open; do not route to Messages.
+    // (NotificationRouter treats type == null as chat_message → Messages tab.)
+    if (RegExp(r'^/dl/open/?$', caseSensitive: false).hasMatch(normalized)) {
+      debugPrint('[Push] deep link → open_app (no tab navigation)');
+      unawaited(clearInactiveReminder());
+      return;
+    }
+
     if (normalized.contains('message') || uri.host == 'messages') {
       data['type'] = 'chat_message';
     } else if (normalized.contains('connect')) {
@@ -809,6 +835,14 @@ class PushService {
     final profileId =
         uri.queryParameters['profileId'] ?? uri.queryParameters['match'];
     if (profileId != null) data['profileId'] = profileId;
+
+    // Untyped deep links used to fall through to Messages; only dispatch when
+    // we resolved a destination type (or an explicit profileId for chat).
+    if (data['type'] == null && data['profileId'] == null) {
+      debugPrint('[Push] deep link → ignored (no route)');
+      unawaited(clearInactiveReminder());
+      return;
+    }
 
     debugPrint('[Push] deep link → generic type=${data['type']}');
     _dispatchOpen(data);
