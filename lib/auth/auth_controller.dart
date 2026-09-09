@@ -649,6 +649,13 @@ class AuthController extends ChangeNotifier {
       await storage.deleteSignupStep();
     }
 
+    // A welcome-screen reminder may already exist before this login.
+    if (isSignupInProgress) {
+      await PushService.instance.scheduleSignupReminder();
+    } else {
+      await PushService.instance.cancelSignupReminder();
+    }
+
     // Navigate immediately — RevenueCat/StoreKit must not block login.
     // Prompt flag is a cheap local read; load before UI so connect check is sync.
     await NotificationPromptStore.loadForUser(result.user.id);

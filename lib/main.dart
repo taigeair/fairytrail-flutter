@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:fairytrail/analytics/analytics_service.dart';
 import 'package:fairytrail/auth/account_restored.dart';
@@ -60,8 +61,6 @@ Future<void> main() async {
       // Init push / deep links early (permissions asked later on enable screen).
       // Firebase Core is initialized inside PushService.
       await PushService.instance.initialize();
-      await AnalyticsService.instance.initialize();
-      await AnalyticsService.instance.logEvent('app_open');
 
       final themeController = ThemeController();
       setTrackedDarkMode(themeController.isDark);
@@ -73,11 +72,18 @@ Future<void> main() async {
       final authController = AuthController();
       final remoteConfigController = RemoteConfigController();
       await authController.bootstrap();
-      if (authController.isSignupInProgress) {
-        unawaited(PushService.instance.scheduleSignupReminder());
+      if (authController.isSignupInProgress ||
+          (Platform.isIOS && !authController.isAuthenticated)) {
+        // Finish handing reminders to iOS before displaying the welcome screen,
+        // including when the user leaves without starting signup.
+        await PushService.instance.scheduleSignupReminder(
+          allowBeforeSignup: Platform.isIOS && !authController.isAuthenticated,
+        );
       } else {
-        unawaited(PushService.instance.cancelSignupReminder());
+        await PushService.instance.cancelSignupReminder();
       }
+      await AnalyticsService.instance.initialize();
+      await AnalyticsService.instance.logEvent('app_open');
       if (authController.isAuthenticated) {
         unawaited(remoteConfigController.refresh());
       }

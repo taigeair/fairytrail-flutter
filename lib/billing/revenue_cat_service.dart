@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:fairytrail/billing/billing_plans.dart';
 import 'package:fairytrail/config/billing_config.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
@@ -47,7 +48,10 @@ class RevenueCatService {
 
   Future<void> configure(String appUserId) async {
     if (appUserId.isEmpty) return;
-    if (_configured && _appUserId == appUserId) return;
+    if (_configured && _appUserId == appUserId) {
+      await _syncFirebaseAppInstanceId();
+      return;
+    }
 
     if (!Platform.isIOS && !Platform.isAndroid) {
       debugPrint('[RevenueCat] Unsupported platform — skipping configure');
@@ -65,10 +69,29 @@ class RevenueCatService {
     _appUserId = appUserId;
     _cachedOfferings = null;
 
+    await _syncFirebaseAppInstanceId();
+
     try {
       await refreshOfferings();
     } catch (e) {
       debugPrint('[RevenueCat] Failed to load offerings: $e');
+    }
+  }
+
+  /// Required by RevenueCat's Firebase / Google Analytics integration.
+  /// Uses the installation ID, not our account ID or the FCM push token.
+  /// Revenue reporting also requires enabling the integration in RevenueCat.
+  Future<void> _syncFirebaseAppInstanceId() async {
+    try {
+      final instanceId = await FirebaseAnalytics.instance.appInstanceId;
+      if (instanceId == null || instanceId.isEmpty) {
+        debugPrint('[RevenueCat] Firebase Analytics instance ID unavailable');
+        return;
+      }
+      await Purchases.setFirebaseAppInstanceId(instanceId);
+    } catch (e) {
+      // Analytics failures must not prevent customers from purchasing.
+      debugPrint('[RevenueCat] Failed to sync Firebase Analytics instance ID: $e');
     }
   }
 

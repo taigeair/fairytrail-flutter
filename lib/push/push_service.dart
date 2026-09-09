@@ -492,11 +492,13 @@ class PushService {
   ///
   /// Fixed IDs make repeated app opens replace the existing sequence rather
   /// than stacking duplicate notifications.
-  Future<void> scheduleSignupReminder() async {
+  /// [allowBeforeSignup] includes iOS welcome-screen visitors who have not
+  /// saved a signup step yet; callers must exclude authenticated users.
+  Future<void> scheduleSignupReminder({bool allowBeforeSignup = false}) async {
     await _ensureLocalNotifications();
 
     final step = await LocalStorage.instance.getSignupStep();
-    if (step == null || step < 1) {
+    if (!allowBeforeSignup && (step == null || step < 1)) {
       await cancelSignupReminder();
       debugPrint('[Push] signup reminder skipped — signup not started');
       return;
