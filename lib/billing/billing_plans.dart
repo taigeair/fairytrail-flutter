@@ -36,6 +36,9 @@ class BillingPlan {
   /// Silver weekly row (7-day period), regardless of A/B package id.
   bool get isWeekly => duration == 7;
 
+  /// Silver / Gold annual row (12-month period), regardless of A/B package id.
+  bool get isAnnual => duration == 12;
+
   BillingPlan copyWith({
     int? duration,
     int? durationLabel,
@@ -108,17 +111,64 @@ String normalizeSilverWeeklyPackageId(String raw) {
   }
 }
 
-/// Silver catalog with the A/B weekly RevenueCat package id applied.
-List<BillingPlan> silverPlansForWeeklyPackage(String weeklyPackageId) {
-  final id = normalizeSilverWeeklyPackageId(weeklyPackageId);
-  final weeklyProductId = _weeklyProductIdForPackage(id);
+/// Maps init / remote-config annual values onto RevenueCat package ids.
+String normalizeSilverAnnualPackageId(String raw) {
+  final v = raw.trim();
+  if (v.isEmpty) return r'$rc_annual';
+  switch (v.toLowerCase()) {
+    case 'b':
+    case 'yearly_b':
+    case 'annual_b':
+    case 'silver.12.4999':
+    case 'silver:silver-12-4999':
+    case 'silver-12-4999':
+      return 'yearly_b';
+    case 'a':
+    case r'$rc_annual':
+    case 'silver.12':
+    case 'silver:silver-12':
+    case 'silver-12':
+      return r'$rc_annual';
+    default:
+      final lower = v.toLowerCase();
+      if (lower.contains('yearly_b') ||
+          lower.contains('annual_b') ||
+          lower.contains('4999')) {
+        return 'yearly_b';
+      }
+      return v;
+  }
+}
+
+/// Silver catalog with A/B weekly + annual RevenueCat package ids applied.
+List<BillingPlan> silverPlansForPackages({
+  String weeklyPackageId = r'$rc_weekly',
+  String annualPackageId = r'$rc_annual',
+}) {
+  final weeklyId = normalizeSilverWeeklyPackageId(weeklyPackageId);
+  final annualId = normalizeSilverAnnualPackageId(annualPackageId);
+  final weeklyProductId = _weeklyProductIdForPackage(weeklyId);
+  final annualProductId = _annualProductIdForPackage(annualId);
+  final isAnnualB = annualId == 'yearly_b';
   return [
     for (final plan in billingTiers[tierSilver]!)
       if (plan.isWeekly)
-        plan.copyWith(rcPackageId: id, productId: weeklyProductId)
+        plan.copyWith(rcPackageId: weeklyId, productId: weeklyProductId)
+      else if (plan.isAnnual)
+        plan.copyWith(
+          rcPackageId: annualId,
+          productId: annualProductId,
+          price: isAnnualB ? 4.17 : 7.50,
+          fullPrice: isAnnualB ? 49.99 : 89.99,
+        )
       else
         plan,
   ];
+}
+
+/// Silver catalog with the A/B weekly RevenueCat package id applied.
+List<BillingPlan> silverPlansForWeeklyPackage(String weeklyPackageId) {
+  return silverPlansForPackages(weeklyPackageId: weeklyPackageId);
 }
 
 /// Store product ids for Silver weekly A/B packages (offline / catalog fallback).
@@ -138,13 +188,44 @@ String _weeklyProductIdForPackage(String packageId) {
   return _isAndroid ? 'silver:silver-1-599' : 'silver.1.599';
 }
 
-/// Plans for [tier], applying weekly A/B package id when [tier] is Silver.
+/// Store product ids for Silver annual A/B packages (offline / catalog fallback).
+///
+/// Matches RevenueCat offering `silver`:
+/// - `$rc_annual` → A (control, current $89.99 on silver-12 / silver.12)
+/// - `yearly_b` → B (variant, $49.99)
+String _annualProductIdForPackage(String packageId) {
+  final id = normalizeSilverAnnualPackageId(packageId);
+  if (id == 'yearly_b') {
+    return _isAndroid ? 'silver:silver-12-4999' : 'silver.12.4999';
+  }
+  return _isAndroid ? 'silver:silver-12' : 'silver.12';
+}
+
+/// Current + $49.99 variant Silver annual store product ids (trial eligibility).
+List<String> silverAnnualStoreProductIds() {
+  if (_isAndroid) {
+    return const [
+      'silver:silver-12',
+      'silver:silver-12-4999',
+    ];
+  }
+  return const [
+    'silver.12',
+    'silver.12.4999',
+  ];
+}
+
+/// Plans for [tier], applying weekly/annual A/B package ids when [tier] is Silver.
 List<BillingPlan> plansForTier(
   String tier, {
   String weeklyPackageId = r'$rc_weekly',
+  String annualPackageId = r'$rc_annual',
 }) {
   if (tier == tierSilver) {
-    return silverPlansForWeeklyPackage(weeklyPackageId);
+    return silverPlansForPackages(
+      weeklyPackageId: weeklyPackageId,
+      annualPackageId: annualPackageId,
+    );
   }
   return List<BillingPlan>.from(billingTiers[tier] ?? const []);
 }
@@ -163,6 +244,7 @@ final Map<String, Map<String, String>> _productIds = {
     // [_weeklyProductIdForPackage].
     '1_weekly': _isAndroid ? 'silver:silver-1-599' : 'silver.1.599',
     '6': _isAndroid ? 'silver:silver-6' : 'silver.6',
+    // Control annual (A / $rc_annual @ $89.99). Variant B uses yearly_b @ $49.99.
     '12': _isAndroid ? 'silver:silver-12' : 'silver.12',
   },
 };
@@ -218,8 +300,8 @@ final Map<String, List<BillingPlan>> billingTiers = {
     BillingPlan(
       duration: 12,
       durationLabel: 1,
-      price: 4.66,
-      fullPrice: 55.99,
+      price: 7.50,
+      fullPrice: 89.99,
       label: 'best value',
       productId: _productIds[tierSilver]!['12']!,
       rcPackageId: r'$rc_annual',

@@ -89,6 +89,23 @@ class InitResponse {
     return r'$rc_weekly';
   }
 
+  /// RevenueCat package id for Silver annual on the upgrade / free-trial paywall.
+  ///
+  /// Reads the resolved `silver_annual_package_id`, or the assigned
+  /// `silver_annual_package_id_A` / `_B` key when the server only sends the
+  /// winning variant. Accepts `$rc_annual` / `yearly_b` or `A` / `B`.
+  /// Defaults to `$rc_annual` (control, current $89.99).
+  String get silverAnnualPackageId {
+    final resolved = _nonEmpty(kv['silver_annual_package_id']);
+    if (resolved != null) return normalizeSilverAnnualPackageId(resolved);
+
+    final a = _nonEmpty(kv['silver_annual_package_id_A']);
+    final b = _nonEmpty(kv['silver_annual_package_id_B']);
+    if (b != null && a == null) return normalizeSilverAnnualPackageId(b);
+    if (a != null && b == null) return normalizeSilverAnnualPackageId(a);
+    return r'$rc_annual';
+  }
+
   static String? _nonEmpty(String? value) {
     final v = value?.trim();
     if (v == null || v.isEmpty) return null;
@@ -306,23 +323,26 @@ Future<InitResponse> fetchInit({bool requiresAuth = true}) async {
   }
 
   final init = InitResponse.fromJson(Map<String, dynamic>.from(data));
-  _logWeeklyAb(init);
+  _logBillingAb(init);
   return init;
 }
 
-void _logWeeklyAb(InitResponse init) {
+void _logBillingAb(InitResponse init) {
   if (!kDebugMode) return;
-  final weeklyKv = Map<String, String>.fromEntries(
+  final billingKv = Map<String, String>.fromEntries(
     init.kv.entries.where((e) {
       final k = e.key.toLowerCase();
       return k.contains('week') ||
+          k.contains('annual') ||
           k.contains('silver_weekly') ||
+          k.contains('silver_annual') ||
           k.contains('package_id') ||
           k.endsWith('_a') ||
           k.endsWith('_b');
     }),
   );
   debugPrint('[Init] silverWeeklyPackageId=${init.silverWeeklyPackageId}');
-  debugPrint('[Init] weekly/AB kv ($weeklyKv)');
+  debugPrint('[Init] silverAnnualPackageId=${init.silverAnnualPackageId}');
+  debugPrint('[Init] billing/AB kv ($billingKv)');
   debugPrint('[Init] all kv keys=${(init.kv.keys.toList()..sort())}');
 }

@@ -28,6 +28,8 @@ class RemoteConfigController extends ChangeNotifier {
   bool get showFreeTrialX => _init?.showFreeTrialX ?? true;
   String get silverWeeklyPackageId =>
       _init?.silverWeeklyPackageId ?? r'$rc_weekly';
+  String get silverAnnualPackageId =>
+      _init?.silverAnnualPackageId ?? r'$rc_annual';
   FreeTrialTextConfig get freeTrialText =>
       _init?.freeTrialText ?? FreeTrialTextConfig.defaults;
   DailyLimitCopyConfig get dailyLimitCopy =>
@@ -113,7 +115,7 @@ class RemoteConfigController extends ChangeNotifier {
       if (kDebugMode) {
         debugPrint(
           '[RemoteConfig] refreshed weekly=${result.silverWeeklyPackageId} '
-          'force-gen=$generation',
+          'annual=${result.silverAnnualPackageId} force-gen=$generation',
         );
       }
       notifyListeners();

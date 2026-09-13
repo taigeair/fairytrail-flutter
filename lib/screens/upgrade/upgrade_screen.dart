@@ -139,6 +139,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       final info = await RevenueCatService.instance.getCustomerInfo();
       if (!mounted) return;
       final weeklyId = _weeklyPackageId;
+      final annualId = _annualPackageId;
       final silverPkgs = offerings?.all[tierSilver]?.availablePackages
               .map(
                 (p) =>
@@ -146,8 +147,15 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
               )
               .toList() ??
           const <String>[];
-      final plans = plansForTier(tierSilver, weeklyPackageId: weeklyId);
-      debugPrint('[Upgrade] weeklyPackageId=$weeklyId from=${widget.from}');
+      final plans = plansForTier(
+        tierSilver,
+        weeklyPackageId: weeklyId,
+        annualPackageId: annualId,
+      );
+      debugPrint(
+        '[Upgrade] weeklyPackageId=$weeklyId annualPackageId=$annualId '
+        'from=${widget.from}',
+      );
       debugPrint('[Upgrade] silver plans=${plans.map((p) => '${p.rcPackageId}/${p.productId}').toList()}');
       debugPrint('[Upgrade] RC silver packages=$silverPkgs');
       setState(() {
@@ -180,9 +188,13 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   String get _weeklyPackageId =>
       RemoteConfigScope.maybeOf(context)?.silverWeeklyPackageId ?? r'$rc_weekly';
 
+  String get _annualPackageId =>
+      RemoteConfigScope.maybeOf(context)?.silverAnnualPackageId ?? r'$rc_annual';
+
   List<BillingPlan> get _plansForTier => plansForTier(
         _effectiveTierToShow,
         weeklyPackageId: _weeklyPackageId,
+        annualPackageId: _annualPackageId,
       );
 
   BillingPlan? get _selectedBillingPlan {
@@ -211,7 +223,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     final plan = _selectedBillingPlan;
     if (plan == null) return '';
     if (plan.isWeekly) return 'week';
-    if (plan.rcPackageId == r'$rc_annual') return 'year';
+    if (plan.isAnnual) return 'year';
     if (plan.duration == 1) return 'month';
     return '${plan.duration} months';
   }
@@ -228,7 +240,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
         'price': plan.fullPrice,
         'duration_type': plan.isWeekly
             ? 'weekly'
-            : plan.rcPackageId == r'$rc_annual'
+            : plan.isAnnual
             ? 'yearly'
             : 'monthly',
         'rc_package_id': plan.rcPackageId,
@@ -280,7 +292,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       final duration = plan.isWeekly ? 1 : plan.duration;
       final durationType = plan.isWeekly
           ? 'weekly'
-          : plan.rcPackageId == r'$rc_annual'
+          : plan.isAnnual
           ? 'yearly'
           : 'monthly';
       final purchasePrice = storeProduct?.price ?? price.rawPrice;
@@ -937,7 +949,7 @@ class _PlanCard extends StatelessWidget {
 
   String get _periodUnit {
     if (plan.isWeekly) return 'week';
-    if (plan.rcPackageId == r'$rc_annual') return 'year';
+    if (plan.isAnnual) return 'year';
     if (plan.duration == 1) return 'month';
     return 'months';
   }

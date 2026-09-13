@@ -129,25 +129,28 @@ class RevenueCatService {
   Future<bool> hasUsedSilverAnnualTrial() async {
     if (!_configured) return false;
 
-    final annualPlan = billingTiers[tierSilver]!.firstWhere(
-      (plan) => plan.rcPackageId == r'$rc_annual',
-    );
-    final productId = annualPlan.productId;
+    final productIds = silverAnnualStoreProductIds();
 
     if (Platform.isIOS) {
       final eligibility =
-          await Purchases.checkTrialOrIntroductoryPriceEligibility([productId]);
-      final status = eligibility[productId]?.status;
-      if (status == IntroEligibilityStatus.introEligibilityStatusIneligible) {
-        return true;
+          await Purchases.checkTrialOrIntroductoryPriceEligibility(productIds);
+      var anyEligible = false;
+      var anyIneligible = false;
+      for (final productId in productIds) {
+        final status = eligibility[productId]?.status;
+        if (status == IntroEligibilityStatus.introEligibilityStatusIneligible) {
+          anyIneligible = true;
+        } else if (status ==
+            IntroEligibilityStatus.introEligibilityStatusEligible) {
+          anyEligible = true;
+        }
       }
-      if (status == IntroEligibilityStatus.introEligibilityStatusEligible) {
-        return false;
-      }
+      if (anyIneligible) return true;
+      if (anyEligible) return false;
     }
 
     final customerInfo = await getCustomerInfo();
-    return customerInfo.allPurchasedProductIdentifiers.contains(productId);
+    return productIds.any(customerInfo.allPurchasedProductIdentifiers.contains);
   }
 
   Package? findPackage({

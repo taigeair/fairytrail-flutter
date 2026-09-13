@@ -67,6 +67,37 @@ void main() {
     );
   });
 
+  test('resolves silver annual A/B package ids', () {
+    expect(
+      InitResponse.fromJson({
+        'kv': {'silver_annual_package_id': 'yearly_b'},
+      }).silverAnnualPackageId,
+      'yearly_b',
+    );
+    expect(
+      InitResponse.fromJson({
+        'kv': {'silver_annual_package_id': 'B'},
+      }).silverAnnualPackageId,
+      'yearly_b',
+    );
+    expect(
+      InitResponse.fromJson({
+        'kv': {'silver_annual_package_id_B': 'yearly_b'},
+      }).silverAnnualPackageId,
+      'yearly_b',
+    );
+    expect(
+      InitResponse.fromJson({
+        'kv': {'silver_annual_package_id_A': r'$rc_annual'},
+      }).silverAnnualPackageId,
+      r'$rc_annual',
+    );
+    expect(
+      InitResponse.fromJson({'kv': <String, String>{}}).silverAnnualPackageId,
+      r'$rc_annual',
+    );
+  });
+
   test('allows first-connect ad grace to be disabled remotely', () {
     final response = InitResponse.fromJson({
       'kv': {'first_connect_ad_grace_actions': '0'},

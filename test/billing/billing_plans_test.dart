@@ -82,4 +82,23 @@ void main() {
     final fromLetter = silverPlansForWeeklyPackage('B');
     expect(fromLetter.firstWhere((p) => p.isWeekly).rcPackageId, 'weekly_b');
   });
+
+  test('silverPlansForPackages applies annual A/B prices and product ids', () {
+    final control = silverPlansForPackages();
+    final annualControl = control.firstWhere((p) => p.isAnnual);
+    expect(annualControl.rcPackageId, r'$rc_annual');
+    expect(annualControl.fullPrice, 89.99);
+    expect(annualControl.price, 7.50);
+
+    final variant = silverPlansForPackages(annualPackageId: 'yearly_b');
+    final annualVariant = variant.firstWhere((p) => p.isAnnual);
+    expect(annualVariant.rcPackageId, 'yearly_b');
+    expect(annualVariant.fullPrice, 49.99);
+    expect(annualVariant.price, 4.17);
+    expect(annualVariant.productId, isNot(equals(annualControl.productId)));
+
+    final fromLetter = silverPlansForPackages(annualPackageId: 'B');
+    expect(fromLetter.firstWhere((p) => p.isAnnual).rcPackageId, 'yearly_b');
+    expect(fromLetter.firstWhere((p) => p.isAnnual).fullPrice, 49.99);
+  });
 }

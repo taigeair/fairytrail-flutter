@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:fairytrail/analytics/meta_events_service.dart';
 import 'package:fairytrail/auth/auth_controller.dart';
@@ -34,15 +33,13 @@ class SilverFreeTrialScreen extends StatefulWidget {
 }
 
 class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
-  static const _annualPlan = BillingPlan(
-    duration: 12,
-    durationLabel: 12,
-    price: 4.66,
-    fullPrice: 55.99,
-    label: 'best value',
-    productId: '',
-    rcPackageId: r'$rc_annual',
-  );
+  BillingPlan get _annualPlan {
+    final annualPackageId =
+        RemoteConfigScope.maybeOf(context)?.silverAnnualPackageId ??
+        r'$rc_annual';
+    return silverPlansForPackages(annualPackageId: annualPackageId)
+        .firstWhere((plan) => plan.isAnnual);
+  }
 
   static const _featureIcons = <IconData>[
     Icons.visibility_outlined,
@@ -101,18 +98,24 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
     });
 
     try {
+      try {
+        await RemoteConfigScope.maybeOf(context)?.refresh();
+      } catch (_) {}
+      if (!mounted) return;
+
       await Purchases.invalidateCustomerInfoCache();
       final offerings = await RevenueCatService.instance.refreshOfferings();
+      final annualPlan = _annualPlan;
       final pkg = RevenueCatService.instance.findPackage(
         tier: tierSilver,
-        rcPackageId: r'$rc_annual',
+        rcPackageId: annualPlan.rcPackageId,
+        productId: annualPlan.productId,
         offerings: offerings,
       );
 
-      final productId = Platform.isAndroid ? 'silver:silver-12' : 'silver.12';
       StoreProduct? directProduct;
       try {
-        final direct = await Purchases.getProducts([productId]);
+        final direct = await Purchases.getProducts([annualPlan.productId]);
         if (direct.isNotEmpty) directProduct = direct.first;
       } catch (_) {
         // Keep going with offering product.
@@ -148,16 +151,18 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
     final userId = auth.user?.id;
     final product = _product ?? _package?.storeProduct;
     final trial = _trial;
-    final price = trial != null ? 0.0 : (product?.price ?? _annualPlan.fullPrice);
+    final annualPlan = _annualPlan;
+    final price = trial != null ? 0.0 : (product?.price ?? annualPlan.fullPrice);
     final currency = product?.currencyCode ?? 'USD';
     final priceString = trial != null
         ? '\$0.00'
-        : (product?.priceString ?? '\$55.99');
+        : (product?.priceString ??
+            '\$${annualPlan.fullPrice.toStringAsFixed(2)}');
 
     try {
       final purchase = await RevenueCatService.instance.purchasePlan(
         tier: tierSilver,
-        plan: _annualPlan,
+        plan: annualPlan,
       );
       if (!mounted) return;
 
@@ -247,7 +252,8 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
     final remoteConfig = RemoteConfigScope.of(context);
     final copy = remoteConfig.freeTrialText;
     final trial = _trial;
-    final priceString = _product?.priceString ?? '\$55.99';
+    final priceString = _product?.priceString ??
+        '\$${_annualPlan.fullPrice.toStringAsFixed(2)}';
     final trialDays = trial?.days ?? 3;
     final midDay = trialDays <= 2
         ? trialDays
