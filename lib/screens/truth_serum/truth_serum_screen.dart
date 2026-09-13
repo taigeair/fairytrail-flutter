@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:fairytrail/analytics/appsflyer_service.dart';
 import 'package:fairytrail/analytics/meta_events_service.dart';
 import 'package:fairytrail/api/truth_serum.dart';
 import 'package:fairytrail/auth/auth_controller.dart';
@@ -129,6 +130,15 @@ class _TruthSerumScreenState extends State<TruthSerumScreen> {
       final tx = purchase.storeTransaction;
       unawaited(
         MetaEventsService.instance.logPurchaseFromStoreProduct(
+          customEventName: 'purchased_truthserum',
+          contentType: 'truth_serum',
+          product: product,
+          transaction: tx,
+          userId: user?.id,
+        ),
+      );
+      unawaited(
+        AppsFlyerService.instance.logPurchaseFromStoreProduct(
           customEventName: 'purchased_truthserum',
           contentType: 'truth_serum',
           product: product,

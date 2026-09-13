@@ -1,3 +1,4 @@
+import 'package:fairytrail/analytics/appsflyer_service.dart';
 import 'package:fairytrail/utils/api/end_points.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
@@ -31,13 +32,27 @@ class AnalyticsService {
     }
   }
 
-  Future<void> logEvent(
-    String name, [
-    Map<String, Object>? parameters,
-  ]) async {
+  static const _appsFlyerEvents = {
+    'started_signup',
+    'signup_basics_completed',
+    'account_created',
+    'fully_registered',
+    'started_subscription',
+    'connect_sent',
+    'skip_sent',
+    'added_activity',
+    'message_sent',
+    'added_meetup',
+    'scheduled_deletion',
+  };
+
+  Future<void> logEvent(String name, [Map<String, Object>? parameters]) async {
     try {
       await _analytics.logEvent(name: name, parameters: parameters);
       debugPrint('[Analytics] event $name');
+      if (_appsFlyerEvents.contains(name)) {
+        await AppsFlyerService.instance.logEvent(name, parameters);
+      }
     } catch (e) {
       debugPrint('[Analytics] event failed ($name): $e');
     }

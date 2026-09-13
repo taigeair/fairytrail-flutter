@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fairytrail/analytics/analytics_service.dart';
+import 'package:fairytrail/analytics/appsflyer_service.dart';
 import 'package:fairytrail/analytics/meta_events_service.dart';
 import 'package:fairytrail/api/edit_profile_props.dart';
 import 'package:fairytrail/api/location.dart';
@@ -346,6 +347,16 @@ class _SendPostcardScreenState extends State<SendPostcardScreen> {
       unawaited(AnalyticsService.instance.logEvent('paid_postcard'));
       unawaited(
         MetaEventsService.instance.logPurchaseFromStoreProduct(
+          customEventName: 'purchased_postcards',
+          contentType: 'postcard',
+          product: product,
+          transaction: tx,
+          userId: userId,
+          extra: {'product_identifier': product.identifier},
+        ),
+      );
+      unawaited(
+        AppsFlyerService.instance.logPurchaseFromStoreProduct(
           customEventName: 'purchased_postcards',
           contentType: 'postcard',
           product: product,

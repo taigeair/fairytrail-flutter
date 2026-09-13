@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fairytrail/analytics/analytics_service.dart';
 import 'package:fairytrail/api/chat.dart' as chat_api;
 import 'package:fairytrail/api/meetups.dart' as meetup_api;
 import 'package:fairytrail/api/models/chat_models.dart';
@@ -772,6 +773,13 @@ class MessagesController extends ChangeNotifier {
       );
       _upsertMatchMessage(saved.copyWith(pending: false, failed: false));
       _bumpMatchLastMessage(saved);
+      unawaited(
+        AnalyticsService.instance.logEvent('message_sent', {
+          'chat_type': 'match',
+          'match_id': match.id,
+          'receiver_user_id': match.profile.id,
+        }),
+      );
     } catch (e) {
       // Response can fail after the server already saved (or WS confirmed).
       if (!_isMatchMessageConfirmed(match.id, id) &&
@@ -812,6 +820,13 @@ class MessagesController extends ChangeNotifier {
       );
       _upsertActivityMessage(saved.copyWith(pending: false, failed: false));
       _bumpActivityLastMessage(saved);
+      unawaited(
+        AnalyticsService.instance.logEvent('message_sent', {
+          'chat_type': 'activity',
+          'activity_id': chat.activity.id,
+          'activity_chat_id': chat.id,
+        }),
+      );
     } catch (e) {
       // Response can fail after the server already saved (or WS confirmed).
       if (!_isActivityMessageConfirmed(chat.id, id) &&

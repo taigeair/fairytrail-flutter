@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:fairytrail/analytics/analytics_service.dart';
+import 'package:fairytrail/analytics/appsflyer_service.dart';
 import 'package:fairytrail/analytics/meta_events_service.dart';
 import 'package:fairytrail/api/check_email.dart';
 import 'package:fairytrail/api/get_me.dart';
@@ -376,6 +377,14 @@ class AuthController extends ChangeNotifier {
         additionalData: request.toJson(),
       ),
     );
+    unawaited(
+      AppsFlyerService.instance.logRegistrationCompleted(
+        registrationMethod: method,
+        profileType: request.profileType,
+        userId: result.userId,
+        additionalData: request.toJson(),
+      ),
+    );
 
     _profileMeta = const ProfileMetaDto(
       id: 0,
@@ -732,6 +741,7 @@ class AuthController extends ChangeNotifier {
     final userId = _user?.id;
     if (userId == null || userId.isEmpty) return;
     await AnalyticsService.instance.identify(userId);
+    await AppsFlyerService.instance.identify(userId);
   }
 }
 

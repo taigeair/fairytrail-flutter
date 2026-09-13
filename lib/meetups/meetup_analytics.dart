@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fairytrail/analytics/analytics_service.dart';
 import 'package:fairytrail/api/models/meetup_models.dart';
 import 'package:fairytrail/track/track.dart';
 
@@ -15,6 +16,13 @@ Map<String, dynamic> meetupTrackProps(MeetupDto m) => {
 /// Mixpanel: created meetup (also refreshes profile `count_meetup_created`).
 void trackCreatedMeetup(MeetupDto m) {
   unawaited(track('created_meetup', meetupTrackProps(m)));
+  unawaited(
+    AnalyticsService.instance.logEvent('added_meetup', {
+      'meetup_id': m.id,
+      'meetup_name': m.name,
+      'category': m.category.apiValue,
+    }),
+  );
 }
 
 /// Mixpanel: joined meetup (also refreshes profile `count_meetup_joined`).

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fairytrail/ads/ads_service.dart';
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
+import 'package:fairytrail/analytics/appsflyer_service.dart';
 import 'package:fairytrail/analytics/meta_events_service.dart';
 import 'package:flutter/foundation.dart';
 
@@ -164,6 +165,9 @@ class TrackingDependentServices {
       );
     }
     await MetaEventsService.instance.initialize(
+      trackingAllowed: trackingAllowed,
+    );
+    await AppsFlyerService.instance.initialize(
       trackingAllowed: trackingAllowed,
     );
   }

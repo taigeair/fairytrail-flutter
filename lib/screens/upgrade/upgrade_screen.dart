@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:fairytrail/analytics/analytics_service.dart';
+import 'package:fairytrail/analytics/appsflyer_service.dart';
 import 'package:fairytrail/analytics/meta_events_service.dart';
 import 'package:fairytrail/api/billing.dart';
 import 'package:fairytrail/api/models/auth_models.dart';
@@ -140,7 +141,8 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       if (!mounted) return;
       final weeklyId = _weeklyPackageId;
       final annualId = _annualPackageId;
-      final silverPkgs = offerings?.all[tierSilver]?.availablePackages
+      final silverPkgs =
+          offerings?.all[tierSilver]?.availablePackages
               .map(
                 (p) =>
                     '${p.identifier}→${p.storeProduct.identifier} ${p.storeProduct.priceString}',
@@ -156,7 +158,9 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
         '[Upgrade] weeklyPackageId=$weeklyId annualPackageId=$annualId '
         'from=${widget.from}',
       );
-      debugPrint('[Upgrade] silver plans=${plans.map((p) => '${p.rcPackageId}/${p.productId}').toList()}');
+      debugPrint(
+        '[Upgrade] silver plans=${plans.map((p) => '${p.rcPackageId}/${p.productId}').toList()}',
+      );
       debugPrint('[Upgrade] RC silver packages=$silverPkgs');
       setState(() {
         _offerings = offerings;
@@ -186,16 +190,18 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   }
 
   String get _weeklyPackageId =>
-      RemoteConfigScope.maybeOf(context)?.silverWeeklyPackageId ?? r'$rc_weekly';
+      RemoteConfigScope.maybeOf(context)?.silverWeeklyPackageId ??
+      r'$rc_weekly';
 
   String get _annualPackageId =>
-      RemoteConfigScope.maybeOf(context)?.silverAnnualPackageId ?? r'$rc_annual';
+      RemoteConfigScope.maybeOf(context)?.silverAnnualPackageId ??
+      r'$rc_annual';
 
   List<BillingPlan> get _plansForTier => plansForTier(
-        _effectiveTierToShow,
-        weeklyPackageId: _weeklyPackageId,
-        annualPackageId: _annualPackageId,
-      );
+    _effectiveTierToShow,
+    weeklyPackageId: _weeklyPackageId,
+    annualPackageId: _annualPackageId,
+  );
 
   BillingPlan? get _selectedBillingPlan {
     final plans = _plansForTier;
@@ -298,23 +304,42 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
       final purchasePrice = storeProduct?.price ?? price.rawPrice;
 
       unawaited(
-        track(
-          isUpgrade ? 'upgraded_subscription' : 'started_subscription',
-          {
-            'source': widget.from,
-            'reason': widget.reason,
-            'tier': _effectiveTierToShow,
-            'from_tier': current,
-            'to_tier': _effectiveTierToShow,
-            'duration': duration,
-            'duration_type': durationType,
-            'rc_package_id': plan.rcPackageId,
-            'price': purchasePrice,
-          },
-        ),
+        track(isUpgrade ? 'upgraded_subscription' : 'started_subscription', {
+          'source': widget.from,
+          'reason': widget.reason,
+          'tier': _effectiveTierToShow,
+          'from_tier': current,
+          'to_tier': _effectiveTierToShow,
+          'duration': duration,
+          'duration_type': durationType,
+          'rc_package_id': plan.rcPackageId,
+          'price': purchasePrice,
+        }),
       );
       unawaited(
         MetaEventsService.instance.logSubscriptionPurchase(
+          eventName: isUpgrade
+              ? 'upgraded_existing_subscription'
+              : 'purchased_new_subscription',
+          tier: _effectiveTierToShow,
+          previousTier: current,
+          price: storeProduct?.price ?? price.rawPrice,
+          currency: storeProduct?.currencyCode ?? price.currencyCode,
+          priceString: storeProduct?.priceString ?? price.priceString,
+          duration: duration,
+          durationType: durationType,
+          productId: storeProduct?.identifier ?? plan.rcPackageId,
+          productTitle: storeProduct?.title,
+          subscriptionPeriod: storeProduct?.subscriptionPeriod,
+          transactionId: purchase.storeTransaction.transactionIdentifier,
+          purchaseDate: purchase.storeTransaction.purchaseDate,
+          from: widget.from,
+          reason: widget.reason,
+          userId: userId,
+        ),
+      );
+      unawaited(
+        AppsFlyerService.instance.logSubscriptionPurchase(
           eventName: isUpgrade
               ? 'upgraded_existing_subscription'
               : 'purchased_new_subscription',

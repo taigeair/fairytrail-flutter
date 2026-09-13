@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:fairytrail/analytics/analytics_service.dart';
+import 'package:fairytrail/analytics/appsflyer_service.dart';
 import 'package:fairytrail/analytics/meta_events_service.dart';
 import 'package:fairytrail/auth/auth_controller.dart';
 import 'package:fairytrail/billing/billing_plans.dart';
@@ -168,6 +169,16 @@ class _VerificationScreenState extends State<VerificationScreen> {
           userId: user?.id,
         ),
       );
+      unawaited(
+        AppsFlyerService.instance.logPurchaseFromStoreProduct(
+          customEventName: 'purchased_verification',
+          contentType: 'verification',
+          product: product,
+          transaction: tx,
+          from: widget.from,
+          userId: user?.id,
+        ),
+      );
 
       if ((auth.profileMeta?.tier ?? tierGated) == tierGated) {
         await auth.setTierOptimistic(tierFree);
@@ -208,8 +219,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     final photoUrl = auth.profileMeta?.photoUrl;
     // Prefer remote-config button text (e.g. "Verify - $4.99") when set;
     // otherwise fall back to the live RevenueCat store price.
-    final remoteCta =
-        RemoteConfigScope.of(context).verificationButtonText;
+    final remoteCta = RemoteConfigScope.of(context).verificationButtonText;
     final price = _product?.priceString ?? '';
     final ctaLabel = (remoteCta != null && remoteCta.isNotEmpty)
         ? remoteCta

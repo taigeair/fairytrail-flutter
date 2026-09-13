@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:fairytrail/analytics/analytics_service.dart';
 import 'package:fairytrail/api/activities.dart';
 import 'package:fairytrail/api/models/activity_models.dart';
 import 'package:fairytrail/api/models/explore_models.dart';
@@ -279,6 +281,13 @@ class _AddEditActivityScreenState extends State<AddEditActivityScreen> {
           attachmentId: attachmentId,
           name: name,
           countryId: _country?.id,
+        );
+        unawaited(
+          AnalyticsService.instance.logEvent('added_activity', {
+            'activity_id': created.id,
+            'name': created.name,
+            'source': 'create',
+          }),
         );
         if (!mounted) return;
         await Navigator.of(context).pushReplacement(

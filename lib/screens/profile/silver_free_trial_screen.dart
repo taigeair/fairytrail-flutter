@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fairytrail/analytics/appsflyer_service.dart';
 import 'package:fairytrail/analytics/meta_events_service.dart';
 import 'package:fairytrail/auth/auth_controller.dart';
 import 'package:fairytrail/billing/billing_plans.dart';
@@ -37,8 +38,9 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
     final annualPackageId =
         RemoteConfigScope.maybeOf(context)?.silverAnnualPackageId ??
         r'$rc_annual';
-    return silverPlansForPackages(annualPackageId: annualPackageId)
-        .firstWhere((plan) => plan.isAnnual);
+    return silverPlansForPackages(
+      annualPackageId: annualPackageId,
+    ).firstWhere((plan) => plan.isAnnual);
   }
 
   static const _featureIcons = <IconData>[
@@ -55,9 +57,9 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
   static const _timelineIconStar = Icons.star_outline_rounded;
 
   static IconData _secondTimelineIcon(String key) => switch (key) {
-        'explore' => _timelineIconExplore,
-        _ => _timelineIconBell,
-      };
+    'explore' => _timelineIconExplore,
+    _ => _timelineIconBell,
+  };
 
   bool _loading = true;
   bool _purchasing = false;
@@ -128,7 +130,8 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
       setState(() {
         _package = pkg;
         _product = product;
-        _trial = trial ??
+        _trial =
+            trial ??
             (directProduct == null
                 ? null
                 : _TrialInfo.fromProduct(directProduct));
@@ -152,12 +155,14 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
     final product = _product ?? _package?.storeProduct;
     final trial = _trial;
     final annualPlan = _annualPlan;
-    final price = trial != null ? 0.0 : (product?.price ?? annualPlan.fullPrice);
+    final price = trial != null
+        ? 0.0
+        : (product?.price ?? annualPlan.fullPrice);
     final currency = product?.currencyCode ?? 'USD';
     final priceString = trial != null
         ? '\$0.00'
         : (product?.priceString ??
-            '\$${annualPlan.fullPrice.toStringAsFixed(2)}');
+              '\$${annualPlan.fullPrice.toStringAsFixed(2)}');
 
     try {
       final purchase = await RevenueCatService.instance.purchasePlan(
@@ -184,6 +189,24 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
         );
         unawaited(
           MetaEventsService.instance.logStartedFreeTrial(
+            tier: tierSilver,
+            price: price,
+            currency: currency,
+            priceString: priceString,
+            duration: 12,
+            durationType: 'yearly',
+            productId: product?.identifier ?? r'$rc_annual',
+            trialDays: trial.days,
+            productTitle: product?.title,
+            subscriptionPeriod: product?.subscriptionPeriod,
+            transactionId: purchase.storeTransaction.transactionIdentifier,
+            purchaseDate: purchase.storeTransaction.purchaseDate,
+            from: widget.from,
+            userId: userId,
+          ),
+        );
+        unawaited(
+          AppsFlyerService.instance.logStartedFreeTrial(
             tier: tierSilver,
             price: price,
             currency: currency,
@@ -252,7 +275,8 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
     final remoteConfig = RemoteConfigScope.of(context);
     final copy = remoteConfig.freeTrialText;
     final trial = _trial;
-    final priceString = _product?.priceString ??
+    final priceString =
+        _product?.priceString ??
         '\$${_annualPlan.fullPrice.toStringAsFixed(2)}';
     final trialDays = trial?.days ?? 3;
     final midDay = trialDays <= 2
@@ -266,11 +290,11 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
     ];
 
     String t(String template) => copy.resolve(
-          template,
-          trialDays: trialDays,
-          midDay: midDay,
-          price: priceString,
-        );
+      template,
+      trialDays: trialDays,
+      midDay: midDay,
+      price: priceString,
+    );
 
     final timelineSteps = <_TimelineStep>[
       for (var i = 0; i < copy.timeline.length; i++)
@@ -331,8 +355,9 @@ class _SilverFreeTrialScreenState extends State<SilverFreeTrialScreen> {
                       color: AppColors.backgroundOf(context),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black
-                              .withValues(alpha: isDark ? 0.35 : 0.06),
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.35 : 0.06,
+                          ),
                           blurRadius: 16,
                           offset: const Offset(0, -4),
                         ),
@@ -535,10 +560,7 @@ class _BenefitFeature {
 }
 
 class _BenefitsCard extends StatelessWidget {
-  const _BenefitsCard({
-    required this.header,
-    required this.features,
-  });
+  const _BenefitsCard({required this.header, required this.features});
 
   final String header;
   final List<_BenefitFeature> features;

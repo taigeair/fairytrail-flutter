@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:fairytrail/analytics/analytics_service.dart';
 import 'package:fairytrail/api/account.dart';
 import 'package:fairytrail/auth/auth_controller.dart';
 import 'package:fairytrail/screens/profile/account_pause_confirm_screen.dart';
@@ -59,7 +62,13 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     if (!_canDelete || _loading) return;
     setState(() => _loading = true);
     try {
+      final userId = AuthScope.of(context).user?.id;
       await deleteAccount(reason: _reasonController.text.trim());
+      unawaited(
+        AnalyticsService.instance.logEvent('scheduled_deletion', {
+          if (userId != null && userId.isNotEmpty) 'user_id': userId,
+        }),
+      );
       if (!mounted) return;
       // API sets accountStatus=pending_deletion + clears tokens.
       // Show goodbye (30-day grace) then welcome — RN delete-goodbye.

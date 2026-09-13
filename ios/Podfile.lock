@@ -17,6 +17,19 @@ PODS:
     - RecaptchaInterop (~> 101.0)
   - apple_maps_flutter (0.0.1):
     - Flutter
+  - appsflyer_sdk (7.0.2):
+    - appsflyer_sdk/Core (= 7.0.2)
+  - appsflyer_sdk/Core (7.0.2):
+    - AppsFlyerFramework (= 7.0.2)
+    - AppsFlyerRPC (= 7.0.13)
+    - Flutter
+  - AppsFlyerFramework (7.0.2):
+    - AppsFlyerFramework/Main (= 7.0.2)
+  - AppsFlyerFramework/Main (7.0.2)
+  - AppsFlyerRPC (7.0.13):
+    - AppsFlyerRPC/Main (= 7.0.13)
+  - AppsFlyerRPC/Main (7.0.13):
+    - AppsFlyerFramework (= 7.0.2)
   - battery_plus (1.0.0):
     - Flutter
   - connectivity_plus (0.0.1):
@@ -308,6 +321,7 @@ DEPENDENCIES:
   - app_links (from `.symlinks/plugins/app_links/ios`)
   - app_tracking_transparency (from `.symlinks/plugins/app_tracking_transparency/ios`)
   - apple_maps_flutter (from `.symlinks/plugins/apple_maps_flutter/ios`)
+  - appsflyer_sdk (from `.symlinks/plugins/appsflyer_sdk/ios`)
   - battery_plus (from `.symlinks/plugins/battery_plus/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
@@ -344,6 +358,8 @@ SPEC REPOS:
   trunk:
     - AppAuth
     - AppCheckCore
+    - AppsFlyerFramework
+    - AppsFlyerRPC
     - FBAEMKit
     - FBSDKCoreKit
     - FBSDKCoreKit_Basics
@@ -390,6 +406,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/app_tracking_transparency/ios"
   apple_maps_flutter:
     :path: ".symlinks/plugins/apple_maps_flutter/ios"
+  appsflyer_sdk:
+    :path: ".symlinks/plugins/appsflyer_sdk/ios"
   battery_plus:
     :path: ".symlinks/plugins/battery_plus/ios"
   connectivity_plus:
@@ -459,6 +477,9 @@ SPEC CHECKSUMS:
   AppAuth: ef4da5a3fc2e10b90c09a0a94a9baeaedc0341d5
   AppCheckCore: e215d35177a9cf469927863e69c13e220df32a8b
   apple_maps_flutter: 2237d66a8e242082a2d88134af372f7b3375d7a6
+  appsflyer_sdk: e59bee270421d0d9423ca57aa8ee0154155007cf
+  AppsFlyerFramework: bf96b40ed77d0ad089e5d3e2ae2c0a0d8d62f5b1
+  AppsFlyerRPC: d4125067fdc9cb55f5d97aaf36caae2967001c72
   battery_plus: b42253f6d2dde71712f8c36fef456d99121c5977
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe

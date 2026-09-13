@@ -9,3 +9,7 @@
 # Stripe: optional push-provisioning / TapAndPay (private Google SDK).
 -dontwarn com.stripe.android.pushProvisioning.**
 -dontwarn com.google.android.gms.tapandpay.**
+
+# AppsFlyer (attribution + in-app events).
+-keep class com.appsflyer.** { *; }
+-dontwarn com.appsflyer.**

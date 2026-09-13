@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:fairytrail/analytics/analytics_service.dart';
 import 'package:fairytrail/api/models/activity_models.dart';
 import 'package:fairytrail/utils/api/end_points.dart';
 import 'package:fairytrail/utils/api/https.dart';
@@ -104,6 +107,12 @@ Future<void> saveActivity(int id) async {
     method: HttpMethod.post,
     requiresAuth: true,
     body: {'id': id},
+  );
+  unawaited(
+    AnalyticsService.instance.logEvent('added_activity', {
+      'activity_id': id,
+      'source': 'save',
+    }),
   );
 }
 

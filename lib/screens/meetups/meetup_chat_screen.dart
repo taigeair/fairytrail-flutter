@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fairytrail/analytics/analytics_service.dart';
 import 'package:fairytrail/api/meetups.dart';
 import 'package:fairytrail/api/models/meetup_models.dart';
 import 'package:fairytrail/auth/auth_controller.dart';
@@ -117,6 +118,12 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
         meetupId: _meetup.id,
         id: uuidV4(),
         message: body,
+      );
+      unawaited(
+        AnalyticsService.instance.logEvent('message_sent', {
+          'chat_type': 'meetup',
+          'meetup_id': _meetup.id,
+        }),
       );
       if (!mounted) return;
       setState(() => _messages.add(msg));
