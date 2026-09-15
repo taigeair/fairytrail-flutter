@@ -137,7 +137,9 @@ class _MeetupChatScreenState extends State<MeetupChatScreen> {
         }
       });
     } catch (e) {
-      if (mounted) AppToast.show(context, message: serverErrorText(e));
+      if (mounted) {
+        AppToast.show(context, message: messageSendFailedText(e));
+      }
     } finally {
       if (mounted) setState(() => _sending = false);
     }

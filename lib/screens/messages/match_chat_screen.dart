@@ -400,7 +400,17 @@ class _MatchChatScreenState extends State<MatchChatScreen> {
                 draftKey: 'match_${widget.match.id}',
                 onSend: (text) {
                   final wasEmpty = widget.controller.openMatchMessages.isEmpty;
-                  widget.controller.sendMatchMessage(text);
+                  unawaited(() async {
+                    final error = await widget.controller.sendMatchMessage(
+                      text,
+                    );
+                    if (error != null && context.mounted) {
+                      AppToast.show(
+                        context,
+                        message: messageSendFailedText(error),
+                      );
+                    }
+                  }());
                   EnableNotificationsScreen.openIfNeeded(
                     context,
                     from: 'first_message',

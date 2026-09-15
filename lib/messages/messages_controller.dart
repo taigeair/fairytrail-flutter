@@ -743,12 +743,12 @@ class MessagesController extends ChangeNotifier {
 
   // ── Send ──────────────────────────────────────────────────────────
 
-  Future<void> sendMatchMessage(String text) async {
+  Future<Object?> sendMatchMessage(String text) async {
     final match = _currentMatch;
     final userId = _currentUserId;
-    if (match == null || userId == null) return;
+    if (match == null || userId == null) return null;
     final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty) return null;
 
     final id = uuidV4();
     final optimistic = ChatMessageDto(
@@ -786,17 +786,20 @@ class MessagesController extends ChangeNotifier {
           !await _confirmMatchMessageOnServer(match.profile.id, id)) {
         _upsertMatchMessage(optimistic.copyWith(pending: false, failed: true));
         _threadError = serverErrorText(e);
+        notifyListeners();
+        return e;
       }
     }
     notifyListeners();
+    return null;
   }
 
-  Future<void> sendActivityMessage(String text) async {
+  Future<Object?> sendActivityMessage(String text) async {
     final chat = _currentActivity;
     final userId = _currentUserId;
-    if (chat == null || userId == null) return;
+    if (chat == null || userId == null) return null;
     final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty) return null;
 
     final id = uuidV4();
     final optimistic = ActivityChatMessageDto(
@@ -835,9 +838,12 @@ class MessagesController extends ChangeNotifier {
           optimistic.copyWith(pending: false, failed: true),
         );
         _threadError = serverErrorText(e);
+        notifyListeners();
+        return e;
       }
     }
     notifyListeners();
+    return null;
   }
 
   // ── Unmatch / leave / join ────────────────────────────────────────

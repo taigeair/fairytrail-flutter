@@ -456,7 +456,16 @@ class _ActivityChatScreenState extends State<ActivityChatScreen> {
                     ? (text) {
                         final wasEmpty =
                             widget.controller.openActivityMessages.isEmpty;
-                        widget.controller.sendActivityMessage(text);
+                        unawaited(() async {
+                          final error = await widget.controller
+                              .sendActivityMessage(text);
+                          if (error != null && context.mounted) {
+                            AppToast.show(
+                              context,
+                              message: messageSendFailedText(error),
+                            );
+                          }
+                        }());
                         EnableNotificationsScreen.openIfNeeded(
                           context,
                           from: 'first_message',
