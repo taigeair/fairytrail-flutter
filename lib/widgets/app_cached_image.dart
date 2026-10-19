@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fairytrail/constants/blur_hash.dart';
+import 'package:fairytrail/utils/image_cache_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 /// Network image with a stable BlurHash underlay and a one-shot fade-in.
 ///
@@ -98,17 +102,61 @@ class AppCachedImage extends StatelessWidget {
   }
 }
 
-class _FadingNetworkImage extends StatelessWidget {
+class _FadingNetworkImage extends StatefulWidget {
   const _FadingNetworkImage({required this.url, required this.fit});
 
   final String url;
   final BoxFit fit;
 
   @override
+  State<_FadingNetworkImage> createState() => _FadingNetworkImageState();
+}
+
+class _FadingNetworkImageState extends State<_FadingNetworkImage> {
+  static const _maxRetryDelaySeconds = 10;
+
+  int _attempt = 0;
+  Timer? _retryTimer;
+
+  CachedNetworkImageProvider get _provider =>
+      CachedNetworkImageProvider(widget.url, cacheManager: appImageCacheManager);
+
+  @override
+  void didUpdateWidget(covariant _FadingNetworkImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      _retryTimer?.cancel();
+      _attempt = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleRetry(Object error) {
+    if (_retryTimer?.isActive ?? false) return;
+    if (error is HttpExceptionWithStatus) {
+      final code = error.statusCode;
+      if (code >= 400 && code < 500 && code != 408 && code != 429) return;
+    }
+    final seconds = _attempt < 4 ? 1 << _attempt : _maxRetryDelaySeconds;
+    _retryTimer = Timer(Duration(seconds: seconds), () {
+      if (!mounted) return;
+      PaintingBinding.instance.imageCache.evict(_provider);
+      setState(() => _attempt++);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final url = widget.url;
+    final fit = widget.fit;
     return Image(
-      key: ValueKey('net-$url'),
-      image: CachedNetworkImageProvider(url),
+      key: ValueKey('net-$url-$_attempt'),
+      image: _provider,
       fit: fit,
       gaplessPlayback: true,
       frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
@@ -127,7 +175,10 @@ class _FadingNetworkImage extends StatelessWidget {
           child: child,
         );
       },
-      errorBuilder: (context, _, _) => const SizedBox.expand(),
+      errorBuilder: (context, error, _) {
+        _scheduleRetry(error);
+        return const SizedBox.expand();
+      },
     );
   }
 }

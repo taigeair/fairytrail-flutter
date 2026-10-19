@@ -6,6 +6,7 @@ import 'package:fairytrail/track/track.dart';
 import 'package:fairytrail/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_review/in_app_review.dart';
+import 'package:fairytrail/l10n/locale_controller.dart';
 
 enum _Phase { select, waitingNative, done }
 
@@ -16,10 +17,14 @@ const _starColor = Color(0xFFFFC107);
 /// 4–5 stars: native in-app review, then Done. 1–3 stars: Done immediately.
 /// Caller stays on the rate screen; this is a modal overlay.
 Future<void> showCustomStarRatingDialog(BuildContext context) {
+  final l10n = LocaleScope.of(context);
   return showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const CustomStarRatingDialog(),
+    builder: (_) => ListenableBuilder(
+      listenable: l10n,
+      builder: (context, _) => const CustomStarRatingDialog(),
+    ),
   );
 }
 
@@ -95,8 +100,7 @@ class _CustomStarRatingDialogState extends State<CustomStarRatingDialog> {
               ),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Enjoying Fairytrail so far?',
+            Text(context.tr('review.enjoying_fairytrail_so_far'),
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
@@ -145,8 +149,7 @@ class _CustomStarRatingDialogState extends State<CustomStarRatingDialog> {
                 ),
               ),
               const SizedBox(height: 8),
-              AppText(
-                'Opening review…',
+              AppText(context.tr('review.opening_review'),
                 variant: AppTextVariant.caption,
                 color: muted,
                 textAlign: TextAlign.center,
@@ -154,7 +157,7 @@ class _CustomStarRatingDialogState extends State<CustomStarRatingDialog> {
             ],
             if (_phase == _Phase.done) ...[
               const SizedBox(height: 20),
-              AppButton(label: 'Done', onPressed: _onDone),
+              AppButton(label: context.tr('common.done'), onPressed: _onDone),
             ],
           ],
         ),

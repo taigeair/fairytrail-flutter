@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fairytrail/ads/open_ad_url.dart';
 import 'package:fairytrail/theme/app_colors.dart';
+import 'package:fairytrail/utils/image_cache_manager.dart';
 import 'package:fairytrail/utils/storage/local_storage.dart';
 import 'package:fairytrail/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -57,6 +58,7 @@ class NativeOfferAdScreen extends StatelessWidget {
                     child: validImage
                         ? CachedNetworkImage(
                             imageUrl: imageUrl!,
+                            cacheManager: appImageCacheManager,
                             fit: BoxFit.cover,
                             errorWidget: (_, _, _) => _fallbackImage(),
                           )

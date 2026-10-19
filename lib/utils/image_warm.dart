@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fairytrail/api/models/explore_models.dart';
+import 'package:fairytrail/utils/image_cache_manager.dart';
 import 'package:flutter/painting.dart';
 
 /// Downloads explore profile photo variants into the shared image cache.
@@ -26,7 +27,10 @@ void warmExploreProfilePhotos(
 }
 
 void _warmUrl(String url) {
-  final provider = CachedNetworkImageProvider(url);
+  final provider = CachedNetworkImageProvider(
+    url,
+    cacheManager: appImageCacheManager,
+  );
   final stream = provider.resolve(const ImageConfiguration());
   late final ImageStreamListener listener;
   listener = ImageStreamListener(

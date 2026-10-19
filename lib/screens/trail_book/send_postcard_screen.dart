@@ -21,6 +21,7 @@ import 'package:fairytrail/theme/app_colors.dart';
 import 'package:fairytrail/track/track.dart';
 import 'package:fairytrail/utils/api/https.dart';
 import 'package:fairytrail/utils/common.dart';
+import 'package:fairytrail/utils/image_cache_manager.dart';
 import 'package:fairytrail/utils/storage/local_storage.dart';
 import 'package:fairytrail/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -509,6 +510,7 @@ class _SendPostcardScreenState extends State<SendPostcardScreen> {
                               child: photo != null && photo.isNotEmpty
                                   ? CachedNetworkImage(
                                       imageUrl: photo,
+                                      cacheManager: appImageCacheManager,
                                       fit: BoxFit.cover,
                                     )
                                   : ColoredBox(

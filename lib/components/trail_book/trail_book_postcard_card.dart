@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fairytrail/api/models/trail_book_models.dart';
 import 'package:fairytrail/theme/app_colors.dart';
 import 'package:fairytrail/trail_book/postcard_art.dart';
+import 'package:fairytrail/utils/image_cache_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -325,6 +326,7 @@ class _PostcardArtImage extends StatelessWidget {
 
     return CachedNetworkImage(
       imageUrl: artUrl,
+      cacheManager: appImageCacheManager,
       fit: BoxFit.cover,
       alignment: Alignment.topCenter,
       width: double.infinity,
